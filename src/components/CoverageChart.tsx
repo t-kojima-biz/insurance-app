@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Policy } from '../types';
+import type { Policy } from '../types';
 
 interface CoverageChartProps {
   policies: Policy[];

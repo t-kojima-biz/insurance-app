@@ -1,5 +1,5 @@
 import React from 'react';
-import { Agency } from '../types';
+import type { Agency } from '../types';
 
 interface PrintCoverPageProps {
   customerName: string;

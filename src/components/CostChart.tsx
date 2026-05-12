@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Policy } from '../types';
+import type { Policy } from '../types';
 
 interface CostChartProps {
   policies: Policy[];

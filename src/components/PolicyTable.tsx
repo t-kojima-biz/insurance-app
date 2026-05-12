@@ -1,5 +1,5 @@
 import React from 'react';
-import { Policy, FamilyMember } from '../types';
+import type { Policy, FamilyMember } from '../types';
 import { Edit2, Trash } from 'lucide-react';
 
 interface PolicyTableProps {

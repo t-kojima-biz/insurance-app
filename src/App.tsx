@@ -7,7 +7,7 @@ import PolicyTable from './components/PolicyTable'
 import PolicyForm from './components/PolicyForm'
 import PrintCoverPage from './components/PrintCoverPage'
 import CustomerModal from './components/CustomerModal'
-import { Policy, FamilyMember, Agency } from './types'
+import type { Policy, FamilyMember, Agency } from './types'
 
 import { Printer, Trash2, FileJson, Settings } from 'lucide-react'
 

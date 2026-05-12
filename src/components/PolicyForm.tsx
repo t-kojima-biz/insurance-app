@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Policy, PolicyType, FamilyMember } from '../types';
+import type { Policy, PolicyType, FamilyMember } from '../types';
 
 interface PolicyFormProps {
   onAdd: (policy: Policy) => void;

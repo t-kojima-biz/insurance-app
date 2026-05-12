@@ -1,5 +1,5 @@
 import React from 'react';
-import { Policy } from '../types';
+import type { Policy } from '../types';
 import { CreditCard, Shield, Activity } from 'lucide-react';
 
 interface SummaryDashboardProps {

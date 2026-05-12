@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FamilyMember, Agency } from '../types';
+import type { FamilyMember, Agency } from '../types';
 import { User, X, Plus, Trash2, Building2 } from 'lucide-react';
 
 interface CustomerModalProps {

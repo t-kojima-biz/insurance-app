@@ -5,6 +5,7 @@ import CoverageChart from './components/CoverageChart'
 import CostChart from './components/CostChart'
 import PolicyTable from './components/PolicyTable'
 import PolicyForm from './components/PolicyForm'
+import PolicyAnalysisSection from './components/PolicyAnalysisSection'
 import PrintCoverPage from './components/PrintCoverPage'
 import CustomerModal from './components/CustomerModal'
 import type { Policy, FamilyMember, Agency } from './types'
@@ -158,8 +159,14 @@ function App() {
           </div>
         </div>
 
+        <PolicyAnalysisSection
+          policies={policies}
+          currentAge={currentAge}
+          familyMembers={familyMembers}
+        />
+
         <div style={{ marginTop: '3rem' }}>
-          <PolicyForm 
+          <PolicyForm
             onAdd={handleAddOrUpdatePolicy} 
             familyMembers={familyMembers} 
             editingPolicy={editingPolicy}

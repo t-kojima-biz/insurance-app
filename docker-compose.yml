@@ -1,0 +1,63 @@
+# ============================================
+# 保険管理アプリ - Docker Compose
+# ============================================
+# Usage:
+#   開発:     docker compose up -d
+#   再ビルド: docker compose up -d --build
+#   ログ:     docker compose logs -f
+#   停止:     docker compose down
+# ============================================
+
+x-common-env: &common-env
+  TZ: Asia/Tokyo
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 5
+  start_period: 120s
+
+services:
+  # ===========================================
+  # 保険管理アプリ
+  # Port: 3020
+  # ===========================================
+  insurance-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        APP_PORT: "3020"
+        APP_PATH: insurance
+        APP_TITLE: "Insurance App"
+        APP_DESCRIPTION: "保険管理アプリケーション"
+    container_name: insurance-app
+    ports:
+      - "3020:3020"
+    volumes:
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - ./index.html:/app/index.html:ro
+    environment:
+      <<: *common-env
+      NODE_ENV: development
+    init: true
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3020/insurance/ || exit 1"]
+      <<: *healthcheck-defaults
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M

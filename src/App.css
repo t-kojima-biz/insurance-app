@@ -452,6 +452,525 @@ h1 {
   border-color: #e53e3e;
 }
 
+/* ===== 分析セクション ===== */
+
+.analysis-section {
+  margin-top: 3rem;
+}
+
+.analysis-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3182ce;
+  color: #2c5282;
+  font-size: 1.2rem;
+}
+
+/* --- ポートフォリオマップ --- */
+
+.portfolio-map {
+  margin-bottom: 3rem;
+}
+
+.pm-totals {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.pm-total-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pm-total-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.pm-total-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pm-blocks {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.pm-block {
+  flex: 1 1 0;
+  min-width: 160px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #3182ce;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  transition: transform 0.15s;
+}
+
+.pm-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.12);
+}
+
+.pm-block.pm-expired {
+  opacity: 0.55;
+}
+
+.pm-type-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pm-company {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pm-benefit {
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.pm-block-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.pm-premium {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.pm-premium-ratio {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #3182ce;
+}
+
+.pm-remain {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  font-size: 0.7rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 1px 8px;
+  border-radius: 8px;
+}
+
+.pm-remain-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pm-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.pm-bar-segment {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.pm-bar-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.pm-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pm-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* --- 保険種類カード --- */
+
+.type-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.type-overview-card {
+  background: white;
+  padding: 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  border-top: 3px solid #3182ce;
+}
+
+.toc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.toc-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.toc-count {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.toc-description {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 0.75rem 0;
+}
+
+.toc-purpose {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.toc-purpose-label {
+  background: #f1f5f9;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-right: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.toc-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.toc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toc-stat-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.toc-stat-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* --- ポートフォリオ診断 --- */
+
+.portfolio-insights {
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.portfolio-insights h4 {
+  font-size: 0.95rem;
+  color: #475569;
+  margin: 0 0 0.75rem 0;
+}
+
+.insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.insight-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* --- 個別分析セクション --- */
+
+.individual-analysis {
+  margin-top: 3rem;
+}
+
+.analysis-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* --- 個別分析カード --- */
+
+.policy-analysis-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.policy-analysis-card.expired-card {
+  opacity: 0.7;
+}
+
+.pac-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pac-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.policy-type-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pac-company {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.expired-badge {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pac-header-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.pac-body {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.5rem;
+  padding: 1.25rem;
+}
+
+.pac-section {
+  margin-bottom: 1.25rem;
+}
+
+.pac-section h5 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: #334155;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pac-data-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pac-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.pac-data-row.highlight-row {
+  background: #eff6ff;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.pac-data-label {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.pac-data-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.pac-coverage-period {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  padding: 0.35rem 0.5rem;
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+/* --- ミニチャート --- */
+
+.mini-chart-container {
+  margin-bottom: 1rem;
+}
+
+/* --- 評価バッジ --- */
+
+.pac-evaluations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.eval-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 0.8rem;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.eval-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.eval-badge-text {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding-left: 1.35rem;
+}
+
+/* --- コンサルタントメモ --- */
+
+.pac-consultant-note {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.pac-consultant-note h5 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: #334155;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.pac-consultant-note p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+/* レスポンシブ */
+
+@media (max-width: 768px) {
+  .pac-body {
+    grid-template-columns: 1fr;
+  }
+
+  .type-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 印刷用設定 */
 @media print {
   @page {
@@ -565,4 +1084,45 @@ h1 {
   .chart-section, .chart-item {
     page-break-inside: avoid;
   }
+
+  .analysis-section {
+    page-break-before: always;
+  }
+
+  .type-overview-card, .policy-analysis-card, .pm-block {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .pm-totals {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .pm-block:hover {
+    transform: none;
+  }
+
+  .type-overview-card {
+    border-top: 3px solid #999 !important;
+  }
+
+  .mini-chart-container {
+    height: 150px !important;
+  }
+
+  .mini-chart-container .recharts-responsive-container {
+    height: 150px !important;
+  }
+
+  .policy-type-badge, .eval-badge, .insight-item, .toc-count, .expired-badge {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .portfolio-insights {
+    page-break-inside: avoid;
+  }
+
 }

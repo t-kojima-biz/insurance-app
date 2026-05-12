@@ -1,0 +1,24 @@
+# ============================================
+# 保険管理アプリ - Production Override
+# ============================================
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# ============================================
+
+x-prod-deploy: &prod-deploy
+  resources:
+    limits:
+      memory: 256M
+    reservations:
+      memory: 64M
+
+services:
+  insurance-app:
+    build:
+      target: runner
+    environment:
+      TZ: Asia/Tokyo
+    init: false
+    volumes: []
+    healthcheck:
+      start_period: 10s
+    deploy: *prod-deploy

@@ -89,6 +89,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ onAdd, familyMembers, editingPo
               </select>
             </div>
             <div className="form-group"><label>契約日</label><input type="date" value={formData.contractDate} onChange={e => setFormData({...formData, contractDate: e.target.value})} /></div>
+            <div className="form-group"><label>証券番号</label><input type="text" value={formData.policyNumber} onChange={e => setFormData({...formData, policyNumber: e.target.value})} placeholder="例: 2709300566" /></div>
           </section>
 
           <section>

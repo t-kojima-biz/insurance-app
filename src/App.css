@@ -78,6 +78,23 @@ h1 {
   overflow-x: auto;
 }
 
+.table-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.table-header-row h3 {
+  margin: 0;
+}
+
+.table-header-row .add-button {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
 .policy-table {
   width: 100%;
   border-collapse: collapse;
@@ -102,6 +119,23 @@ h1 {
 
 .policy-table tr:hover {
   background: #f1f5f9;
+}
+
+.policy-table .total-row {
+  background: #f8fafc;
+  border-top: 2px solid #cbd5e1;
+}
+
+.policy-table .total-row:hover {
+  background: #f8fafc;
+}
+
+.policy-table .grand-total-row {
+  border-top: 2px solid #94a3b8;
+}
+
+.policy-table .grand-total-row td {
+  font-size: 0.85rem;
 }
 
 .add-button {
@@ -636,7 +670,7 @@ h1 {
 
 .type-overview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -754,6 +788,120 @@ h1 {
 .insight-item svg {
   flex-shrink: 0;
   margin-top: 2px;
+}
+
+.insight-item {
+  position: relative;
+}
+
+.insight-item-actions {
+  display: none;
+  gap: 0.25rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.insight-item:hover .insight-item-actions {
+  display: flex;
+}
+
+.insights-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.insights-header h4 {
+  margin: 0;
+}
+
+.insights-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.insight-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.insight-action-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.insight-add-btn {
+  color: #3182ce;
+  border-color: #93c5fd;
+}
+
+.insight-add-btn:hover {
+  background: #eff6ff;
+  border-color: #3182ce;
+}
+
+.insight-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  color: inherit;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.insight-icon-btn:hover {
+  opacity: 1;
+}
+
+.insight-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.insight-type-select {
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #334155;
+  background: white;
+}
+
+.insight-edit-input {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #334155;
+}
+
+.insight-edit-input:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+}
+
+.insight-empty {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 1rem;
 }
 
 /* --- 個別分析セクション --- */
@@ -1053,7 +1201,7 @@ h1 {
     display: none !important;
   }
 
-  .print-button, .add-button, .sample-button, .clear-button, .form-overlay, .form-container, header p {
+  .print-button, .add-button, .sample-button, .clear-button, .form-overlay, .form-container, header p, .no-print {
     display: none !important;
   }
   
@@ -1075,6 +1223,8 @@ h1 {
   .table-container {
     box-shadow: none !important;
     border: none !important;
+    margin-top: 1rem !important;
+    page-break-inside: avoid;
   }
 
   body {
@@ -1089,10 +1239,32 @@ h1 {
     page-break-before: always;
   }
 
-  .type-overview-card, .policy-analysis-card, .pm-block {
+  .type-overview-card, .pm-block {
     page-break-inside: avoid;
     box-shadow: none !important;
     border: 1px solid #ccc !important;
+  }
+
+  .policy-analysis-card {
+    page-break-before: always;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .pac-body {
+    display: grid !important;
+    grid-template-columns: 3fr 2fr !important;
+    gap: 1.5rem !important;
+    padding: 1.25rem !important;
+  }
+
+  .pac-header {
+    padding: 1rem 1.25rem !important;
+  }
+
+  .mini-chart-container {
+    margin-bottom: 1rem;
   }
 
   .pm-totals {
@@ -1108,13 +1280,10 @@ h1 {
     border-top: 3px solid #999 !important;
   }
 
-  .mini-chart-container {
-    height: 150px !important;
+  .type-overview-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  .mini-chart-container .recharts-responsive-container {
-    height: 150px !important;
-  }
 
   .policy-type-badge, .eval-badge, .insight-item, .toc-count, .expired-badge {
     print-color-adjust: exact;

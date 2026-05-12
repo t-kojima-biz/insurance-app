@@ -3,10 +3,11 @@ import type { Agency } from '../types';
 
 interface PrintCoverPageProps {
   customerName: string;
+  birthDate: string;
   agency: Agency;
 }
 
-const PrintCoverPage: React.FC<PrintCoverPageProps> = ({ customerName, agency }) => {
+const PrintCoverPage: React.FC<PrintCoverPageProps> = ({ customerName, birthDate, agency }) => {
   const today = new Date();
   // 和暦表示の簡易版 (2026年 = 令和8年)
   const reiwaYear = today.getFullYear() - 2018;

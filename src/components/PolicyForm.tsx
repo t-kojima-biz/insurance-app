@@ -2,14 +2,54 @@ import React, { useState, useEffect } from 'react';
 import type { Policy, PolicyType, FamilyMember } from '../types';
 
 interface PolicyFormProps {
+  isOpen: boolean;
+  onClose: () => void;
   onAdd: (policy: Policy) => void;
   familyMembers: FamilyMember[];
   editingPolicy: Policy | null;
   onCancel: () => void;
 }
 
-const PolicyForm: React.FC<PolicyFormProps> = ({ onAdd, familyMembers, editingPolicy, onCancel }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const formatComma = (n: number) => n ? n.toLocaleString() : '';
+
+const CommaInput: React.FC<{
+  value: number;
+  onChange: (n: number) => void;
+  label: string;
+}> = ({ value, onChange, label }) => {
+  const [display, setDisplay] = useState(formatComma(value));
+
+  useEffect(() => {
+    setDisplay(formatComma(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^\d]/g, '');
+    if (raw === '') {
+      setDisplay('');
+      onChange(0);
+    } else {
+      const num = Number(raw);
+      setDisplay(num.toLocaleString());
+      onChange(num);
+    }
+  };
+
+  return (
+    <div className="form-group">
+      <label>{label}</label>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={display}
+        onChange={handleChange}
+        onFocus={() => setDisplay(formatComma(value))}
+      />
+    </div>
+  );
+};
+
+const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyMembers, editingPolicy, onCancel }) => {
   const [formData, setFormData] = useState<Partial<Policy>>({
     companyName: '',
     policyType: '終身保険',
@@ -33,7 +73,6 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ onAdd, familyMembers, editingPo
   useEffect(() => {
     if (editingPolicy) {
       setFormData(editingPolicy);
-      setIsOpen(true);
     }
   }, [editingPolicy]);
 
@@ -46,16 +85,18 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ onAdd, familyMembers, editingPo
       annualPremium: (formData.premiumAmount || 0) * annualMult,
     } as Policy;
     onAdd(policyData);
-    setIsOpen(false);
+    onClose();
     if (editingPolicy) onCancel();
   };
 
   const handleClose = () => {
-    setIsOpen(false);
+    onClose();
     onCancel();
   };
 
-  if (!isOpen) return <button onClick={() => setIsOpen(true)} className="add-button">+ 新しい保険証券を登録</button>;
+  const setField = (field: string, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  if (!isOpen) return null;
 
   return (
     <div className="form-overlay">
@@ -64,10 +105,11 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ onAdd, familyMembers, editingPo
         <form onSubmit={handleSubmit} className="grid-form">
           <section>
             <h4>基本情報</h4>
-            <div className="form-group"><label>保険会社</label><input type="text" required value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} /></div>
+            <div className="form-group"><label>保険会社</label><input type="text" required value={formData.companyName} onChange={e => setField('companyName', e.target.value)} /></div>
+            <div className="form-group"><label>証券番号</label><input type="text" value={formData.policyNumber} onChange={e => setField('policyNumber', e.target.value)} placeholder="例: 2709300566" /></div>
             <div className="form-group">
               <label>保険種類</label>
-              <select value={formData.policyType} onChange={e => setFormData({...formData, policyType: e.target.value as PolicyType})}>
+              <select value={formData.policyType} onChange={e => setField('policyType', e.target.value as PolicyType)}>
                 <option value="終身保険">終身保険</option>
                 <option value="収入保障保険">収入保障保険</option>
                 <option value="医療保険">医療保険</option>
@@ -78,43 +120,42 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ onAdd, familyMembers, editingPo
             </div>
             <div className="form-group">
               <label>被保険者</label>
-              <select value={formData.insuredId} onChange={e => setFormData({...formData, insuredId: e.target.value})}>
+              <select value={formData.insuredId} onChange={e => setField('insuredId', e.target.value)}>
                 {familyMembers.map(m => <option key={m.id} value={m.id}>{m.relationship}: {m.name}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label>保険金受取人</label>
-              <select value={formData.beneficiaryId} onChange={e => setFormData({...formData, beneficiaryId: e.target.value})}>
+              <select value={formData.beneficiaryId} onChange={e => setField('beneficiaryId', e.target.value)}>
                 {familyMembers.map(m => <option key={m.id} value={m.id}>{m.relationship}: {m.name}</option>)}
               </select>
             </div>
-            <div className="form-group"><label>契約日</label><input type="date" value={formData.contractDate} onChange={e => setFormData({...formData, contractDate: e.target.value})} /></div>
-            <div className="form-group"><label>証券番号</label><input type="text" value={formData.policyNumber} onChange={e => setFormData({...formData, policyNumber: e.target.value})} placeholder="例: 2709300566" /></div>
+            <div className="form-group"><label>契約日</label><input type="date" value={formData.contractDate} onChange={e => setField('contractDate', e.target.value)} /></div>
           </section>
 
           <section>
             <h4>保障内容</h4>
-            <div className="form-group"><label>死亡保障（疾病）(円)</label><input type="number" value={formData.deathBenefitDisease} onChange={e => setFormData({...formData, deathBenefitDisease: Number(e.target.value)})} /></div>
-            <div className="form-group"><label>死亡保障（災害）(円)</label><input type="number" value={formData.deathBenefitAccident} onChange={e => setFormData({...formData, deathBenefitAccident: Number(e.target.value)})} /></div>
-            <div className="form-group"><label>入院日額（疾病）(円)</label><input type="number" value={formData.hospDayDisease} onChange={e => setFormData({...formData, hospDayDisease: Number(e.target.value)})} /></div>
-            <div className="form-group"><label>入院日額（災害）(円)</label><input type="number" value={formData.hospDayAccident} onChange={e => setFormData({...formData, hospDayAccident: Number(e.target.value)})} /></div>
-            <div className="form-group"><label>診断一時金 (円)</label><input type="number" value={formData.diagnosisBenefit} onChange={e => setFormData({...formData, diagnosisBenefit: Number(e.target.value)})} /></div>
-            <div className="form-group"><label>保険期間（歳/999=終身）</label><input type="number" value={formData.policyEndAge} onChange={e => setFormData({...formData, policyEndAge: Number(e.target.value)})} /></div>
+            <CommaInput label="死亡保障（疾病）(円)" value={formData.deathBenefitDisease || 0} onChange={v => setField('deathBenefitDisease', v)} />
+            <CommaInput label="死亡保障（災害）(円)" value={formData.deathBenefitAccident || 0} onChange={v => setField('deathBenefitAccident', v)} />
+            <CommaInput label="入院日額（疾病）(円)" value={formData.hospDayDisease || 0} onChange={v => setField('hospDayDisease', v)} />
+            <CommaInput label="入院日額（災害）(円)" value={formData.hospDayAccident || 0} onChange={v => setField('hospDayAccident', v)} />
+            <CommaInput label="診断一時金 (円)" value={formData.diagnosisBenefit || 0} onChange={v => setField('diagnosisBenefit', v)} />
+            <div className="form-group"><label>保険期間（歳/999=終身）</label><input type="number" value={formData.policyEndAge} onChange={e => setField('policyEndAge', Number(e.target.value))} /></div>
           </section>
 
           <section>
             <h4>コスト・貯蓄性</h4>
             <div className="form-group">
               <label>払方</label>
-              <select value={formData.paymentFrequency} onChange={e => setFormData({...formData, paymentFrequency: e.target.value as any})}>
+              <select value={formData.paymentFrequency} onChange={e => setField('paymentFrequency', e.target.value as any)}>
                 <option value="monthly">月払</option>
                 <option value="annual">年払</option>
                 <option value="single">一時払</option>
               </select>
             </div>
-            <div className="form-group"><label>保険料（1回あたり）(円)</label><input type="number" value={formData.premiumAmount} onChange={e => setFormData({...formData, premiumAmount: Number(e.target.value)})} /></div>
-            <div className="form-group"><label>払込終了年齢（歳）</label><input type="number" value={formData.paymentEndAge} onChange={e => setFormData({...formData, paymentEndAge: Number(e.target.value)})} /></div>
-            <div className="form-group"><label>満期保険金 (円)</label><input type="number" value={formData.maturityBenefit} onChange={e => setFormData({...formData, maturityBenefit: Number(e.target.value)})} /></div>
+            <CommaInput label="保険料（1回あたり）(円)" value={formData.premiumAmount || 0} onChange={v => setField('premiumAmount', v)} />
+            <div className="form-group"><label>払込終了年齢（歳）</label><input type="number" value={formData.paymentEndAge} onChange={e => setField('paymentEndAge', Number(e.target.value))} /></div>
+            <CommaInput label="満期保険金 (円)" value={formData.maturityBenefit || 0} onChange={v => setField('maturityBenefit', v)} />
           </section>
 
           <div className="form-actions full-width">

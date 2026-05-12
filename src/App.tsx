@@ -22,6 +22,7 @@ function App() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
 
   const loadSampleData = () => {
@@ -84,6 +85,7 @@ function App() {
 
   const handleEditStart = (policy: Policy) => {
     setEditingPolicy(policy);
+    setIsFormOpen(true);
   };
 
   const handlePrint = () => {
@@ -114,7 +116,7 @@ function App() {
 
   return (
     <div className="App">
-      <PrintCoverPage customerName={self?.name || ""} agency={agency} />
+      <PrintCoverPage customerName={self?.name || ""} birthDate={self?.birthDate || ""} agency={agency} />
       
       {isCustomerModalOpen && (
         <CustomerModal 
@@ -130,7 +132,7 @@ function App() {
           <h1>保険証券分析・診断ダッシュボード</h1>
           <div className="customer-summary-display" onClick={() => setIsCustomerModalOpen(true)} title="クリックして情報を編集">
             <span className="customer-name-tag">{self?.name} 様</span>
-            <span className="customer-meta-tag">({currentAge}歳 | 世帯人数: {familyMembers.length}名)</span>
+            <span className="customer-meta-tag">({self?.birthDate} | {currentAge}歳 | 世帯人数: {familyMembers.length}名)</span>
             <Settings size={16} className="settings-icon" />
           </div>
         </div>
@@ -149,7 +151,15 @@ function App() {
 
       <main>
         <SummaryDashboard policies={policies} currentAge={currentAge} />
-        
+
+        <PolicyTable
+          policies={policies}
+          familyMembers={familyMembers}
+          onDelete={handleDeletePolicy}
+          onEdit={handleEditStart}
+          onAddNew={() => setIsFormOpen(true)}
+        />
+
         <div className="charts-container">
           <div className="chart-item">
             <CoverageChart policies={policies} currentAge={currentAge} />
@@ -165,20 +175,14 @@ function App() {
           familyMembers={familyMembers}
         />
 
-        <div style={{ marginTop: '3rem' }}>
-          <PolicyForm
-            onAdd={handleAddOrUpdatePolicy} 
-            familyMembers={familyMembers} 
-            editingPolicy={editingPolicy}
-            onCancel={() => setEditingPolicy(null)}
-          />
-          <PolicyTable 
-            policies={policies} 
-            familyMembers={familyMembers}
-            onDelete={handleDeletePolicy}
-            onEdit={handleEditStart}
-          />
-        </div>
+        <PolicyForm
+          isOpen={isFormOpen || editingPolicy !== null}
+          onClose={() => { setIsFormOpen(false); setEditingPolicy(null); }}
+          onAdd={handleAddOrUpdatePolicy}
+          familyMembers={familyMembers}
+          editingPolicy={editingPolicy}
+          onCancel={() => setEditingPolicy(null)}
+        />
       </main>
     </div>
   )

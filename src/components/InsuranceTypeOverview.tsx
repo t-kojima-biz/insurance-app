@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Policy, PolicyType } from '../types';
 import {
   Landmark,
@@ -11,6 +11,11 @@ import {
   AlertTriangle,
   Lightbulb,
   Layers,
+  Trash,
+  Plus,
+  RotateCcw,
+  Pencil,
+  Check,
 } from 'lucide-react';
 import {
   INSURANCE_TYPE_INFO,
@@ -19,6 +24,11 @@ import {
   getCurrentDeathBenefit,
   type PortfolioInsight,
 } from '../utils/analysisUtils';
+
+interface EditableInsight extends PortfolioInsight {
+  id: string;
+  isCustom?: boolean;
+}
 
 interface InsuranceTypeOverviewProps {
   policies: Policy[];
@@ -41,6 +51,15 @@ const insightColorMap: Record<PortfolioInsight['type'], { bg: string; border: st
   redundancy: { bg: '#fef3c7', border: '#fcd34d', color: '#92400e' },
 };
 
+const insightTypeLabels: Record<PortfolioInsight['type'], string> = {
+  gap: 'ギャップ',
+  recommendation: '推奨',
+  redundancy: '重複',
+};
+
+let nextId = 1;
+const genId = () => `insight-${nextId++}`;
+
 const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies, currentAge }) => {
   const grouped = policies.reduce<Record<PolicyType, Policy[]>>((acc, p) => {
     if (!acc[p.policyType]) acc[p.policyType] = [];
@@ -48,7 +67,65 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
     return acc;
   }, {} as Record<PolicyType, Policy[]>);
 
-  const insights = analyzePortfolio(policies, currentAge);
+  const [editableInsights, setEditableInsights] = useState<EditableInsight[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const prevPoliciesRef = useRef<string>('');
+
+  useEffect(() => {
+    const key = JSON.stringify(policies.map(p => p.id).sort());
+    if (key !== prevPoliciesRef.current) {
+      prevPoliciesRef.current = key;
+      const auto = analyzePortfolio(policies, currentAge);
+      const customItems = editableInsights.filter(i => i.isCustom);
+      setEditableInsights([
+        ...auto.map(a => ({ ...a, id: genId() })),
+        ...customItems,
+      ]);
+    }
+  }, [policies, currentAge]);
+
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingId]);
+
+  const handleDelete = (id: string) => {
+    setEditableInsights(prev => prev.filter(i => i.id !== id));
+  };
+
+  const handleStartEdit = (insight: EditableInsight) => {
+    setEditingId(insight.id);
+    setEditText(insight.text);
+  };
+
+  const handleSaveEdit = (id: string) => {
+    if (editText.trim()) {
+      setEditableInsights(prev => prev.map(i => i.id === id ? { ...i, text: editText.trim() } : i));
+    }
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const handleAdd = (type: PortfolioInsight['type']) => {
+    const newInsight: EditableInsight = {
+      id: genId(),
+      type,
+      text: '',
+      isCustom: true,
+    };
+    setEditableInsights(prev => [...prev, newInsight]);
+    setEditingId(newInsight.id);
+    setEditText('');
+  };
+
+  const handleReset = () => {
+    const auto = analyzePortfolio(policies, currentAge);
+    setEditableInsights(auto.map(a => ({ ...a, id: genId() })));
+    setEditingId(null);
+  };
 
   return (
     <div className="type-overview-section">
@@ -107,23 +184,74 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
         })}
       </div>
 
-      {insights.length > 0 && (
-        <div className="portfolio-insights">
+      <div className="portfolio-insights">
+        <div className="insights-header">
           <h4>ポートフォリオ診断</h4>
-          <div className="insights-list">
-            {insights.map((insight, i) => {
-              const InsightIcon = insightIconMap[insight.type];
-              const colors = insightColorMap[insight.type];
-              return (
-                <div key={i} className="insight-item" style={{ background: colors.bg, borderColor: colors.border, color: colors.color }}>
-                  <InsightIcon size={16} />
-                  <span>{insight.text}</span>
-                </div>
-              );
-            })}
+          <div className="insights-actions no-print">
+            <button className="insight-action-btn" onClick={handleReset} title="自動生成に戻す">
+              <RotateCcw size={14} /> リセット
+            </button>
+            <button className="insight-action-btn insight-add-btn" onClick={() => handleAdd('recommendation')} title="推奨を追加">
+              <Plus size={14} /> 追加
+            </button>
           </div>
         </div>
-      )}
+        <div className="insights-list">
+          {editableInsights.map((insight) => {
+            const InsightIcon = insightIconMap[insight.type];
+            const colors = insightColorMap[insight.type];
+            const isEditing = editingId === insight.id;
+
+            return (
+              <div key={insight.id} className="insight-item" style={{ background: colors.bg, borderColor: colors.border, color: colors.color }}>
+                <InsightIcon size={16} />
+                {isEditing ? (
+                  <div className="insight-edit-row">
+                    <select
+                      className="insight-type-select"
+                      value={insight.type}
+                      onChange={e => {
+                        const newType = e.target.value as PortfolioInsight['type'];
+                        setEditableInsights(prev => prev.map(i => i.id === insight.id ? { ...i, type: newType } : i));
+                      }}
+                    >
+                      {Object.entries(insightTypeLabels).map(([k, v]) => (
+                        <option key={k} value={k}>{v}</option>
+                      ))}
+                    </select>
+                    <input
+                      ref={editInputRef}
+                      className="insight-edit-input"
+                      value={editText}
+                      onChange={e => setEditText(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(insight.id); }}
+                      placeholder="診断内容を入力..."
+                    />
+                    <button className="insight-icon-btn" onClick={() => handleSaveEdit(insight.id)} title="保存">
+                      <Check size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span>{insight.text}</span>
+                    <div className="insight-item-actions no-print">
+                      <button className="insight-icon-btn" onClick={() => handleStartEdit(insight)} title="編集">
+                        <Pencil size={13} />
+                      </button>
+                      <button className="insight-icon-btn" onClick={() => handleDelete(insight.id)} title="削除">
+                        <Trash size={13} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+          {editableInsights.length === 0 && (
+            <div className="insight-empty">診断項目がありません。「追加」ボタンで手動追加できます。</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

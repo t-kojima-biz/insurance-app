@@ -1242,10 +1242,12 @@ h1 {
     box-shadow: none !important;
     border: 1px solid #ddd !important;
     padding: 0.75rem !important;
+    height: 280px !important;
+    overflow: hidden !important;
   }
 
   .chart-item > div {
-    height: 230px !important;
+    height: 260px !important;
     margin-top: 0 !important;
   }
 

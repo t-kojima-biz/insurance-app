@@ -1231,8 +1231,22 @@ h1 {
     background: white !important;
   }
 
-  .chart-section, .chart-item {
+  .charts-container {
+    page-break-before: always;
     page-break-inside: avoid;
+    gap: 0.5rem !important;
+  }
+
+  .chart-item {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    padding: 0.75rem !important;
+  }
+
+  .chart-item > div {
+    height: 230px !important;
+    margin-top: 0 !important;
   }
 
   .analysis-section {

@@ -34,7 +34,7 @@ const CostChart: React.FC<CostChartProps> = ({ policies, currentAge }) => {
     <div style={{ width: '100%', height: 350, marginTop: '40px' }}>
       <h3>将来の保険料負担推移（月額合計）</h3>
       <ResponsiveContainer>
-        <BarChart data={data} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+        <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="age" />
           <YAxis tickFormatter={formatAxisTick} width={80} />

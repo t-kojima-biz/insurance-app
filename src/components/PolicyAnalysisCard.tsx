@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Policy, FamilyMember } from '../types';
-import { Calculator, MessageSquare } from 'lucide-react';
+import { Calculator, MessageSquare, Landmark } from 'lucide-react';
 import {
   analyzePolicy,
   INSURANCE_TYPE_INFO,
@@ -13,9 +13,10 @@ interface PolicyAnalysisCardProps {
   policy: Policy;
   currentAge: number;
   familyMembers: FamilyMember[];
+  onUpdateNote: (policyId: string, note: string) => void;
 }
 
-const PolicyAnalysisCard: React.FC<PolicyAnalysisCardProps> = ({ policy, currentAge, familyMembers }) => {
+const PolicyAnalysisCard: React.FC<PolicyAnalysisCardProps> = ({ policy, currentAge, familyMembers, onUpdateNote }) => {
   const analysis = analyzePolicy(policy, currentAge);
   const typeInfo = INSURANCE_TYPE_INFO[policy.policyType];
 
@@ -135,6 +136,44 @@ const PolicyAnalysisCard: React.FC<PolicyAnalysisCardProps> = ({ policy, current
               </div>
             </div>
           </div>
+
+          {policy.policyType === '個人年金保険' && policy.maturityBenefit > 0 && (() => {
+            const annuityStartAge = policy.paymentEndAge;
+            const payoutEndAge = policy.policyEndAge === 999 ? annuityStartAge + 20 : policy.policyEndAge;
+            const payoutPeriod = payoutEndAge - annuityStartAge;
+            const annualPayout = payoutPeriod > 0 ? policy.maturityBenefit / payoutPeriod : 0;
+            const returnRate = analysis.projectedTotalPremiums > 0
+              ? (policy.maturityBenefit / analysis.projectedTotalPremiums * 100).toFixed(1)
+              : '---';
+
+            return (
+              <div className="pac-section">
+                <h5><Landmark size={14} /> 年金受取</h5>
+                <div className="pac-data-grid">
+                  <div className="pac-data-row">
+                    <span className="pac-data-label">年金受取開始</span>
+                    <span className="pac-data-value">{annuityStartAge}歳</span>
+                  </div>
+                  <div className="pac-data-row">
+                    <span className="pac-data-label">受取期間</span>
+                    <span className="pac-data-value">{policy.policyEndAge === 999 ? '終身' : `${payoutPeriod}年間`}</span>
+                  </div>
+                  <div className="pac-data-row">
+                    <span className="pac-data-label">年間年金額</span>
+                    <span className="pac-data-value">{formatYen(Math.round(annualPayout))}</span>
+                  </div>
+                  <div className="pac-data-row">
+                    <span className="pac-data-label">年金受取総額</span>
+                    <span className="pac-data-value">{formatYen(policy.maturityBenefit)}</span>
+                  </div>
+                  <div className="pac-data-row highlight-row">
+                    <span className="pac-data-label">返戻率</span>
+                    <span className="pac-data-value">{returnRate}%</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="pac-right">
@@ -148,7 +187,12 @@ const PolicyAnalysisCard: React.FC<PolicyAnalysisCardProps> = ({ policy, current
 
           <div className="pac-consultant-note">
             <h5><MessageSquare size={14} /> コンサルタントメモ</h5>
-            <p>{analysis.consultantNote}</p>
+            <textarea
+              className="consultant-note-input"
+              value={policy.consultantNote ?? analysis.consultantNote}
+              onChange={(e) => onUpdateNote(policy.id, e.target.value)}
+              rows={4}
+            />
           </div>
         </div>
       </div>

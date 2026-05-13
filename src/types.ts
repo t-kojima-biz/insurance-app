@@ -31,6 +31,8 @@ export interface Policy {
   annualPremium: number;
   // 貯蓄性
   maturityBenefit: number;
+  // コンサルタントメモ
+  consultantNote?: string;
 }
 
 export interface Agency {

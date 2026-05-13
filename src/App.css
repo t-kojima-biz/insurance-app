@@ -266,9 +266,52 @@ h1 {
   box-sizing: border-box;
 }
 
-.form-group input[type="number"] {
+.form-group input[type="number"],
+.form-group input[inputmode="numeric"] {
   text-align: right;
   padding-right: 0.75rem;
+}
+
+.label-with-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calc-btn {
+  padding: 0.1rem 0.6rem;
+  background: #38a169;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.calc-btn:hover {
+  background: #2f855a;
+}
+
+.form-group input[readonly] {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+  text-align: right;
+  cursor: default;
+}
+
+.form-group input.calc-result-good {
+  color: #166534;
+  background: #f0fdf4;
+  font-weight: 700;
+}
+
+.form-group input.calc-result-poor {
+  color: #991b1b;
+  background: #fef2f2;
+  font-weight: 700;
 }
 
 .form-actions {
@@ -1114,6 +1157,28 @@ h1 {
   margin-bottom: 1rem;
 }
 
+.mini-chart-legend {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.mini-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mini-chart-legend-line {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed;
+}
+
 /* --- 評価バッジ --- */
 
 .pac-evaluations {
@@ -1174,6 +1239,26 @@ h1 {
   font-size: 0.8rem;
   color: #475569;
   line-height: 1.6;
+}
+
+.consultant-note-input {
+  width: 100%;
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.6;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem;
+  resize: vertical;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.consultant-note-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 /* レスポンシブ */
@@ -1303,21 +1388,38 @@ h1 {
   .charts-container {
     page-break-before: always;
     page-break-inside: avoid;
-    gap: 0.5rem !important;
+    height: 180mm !important;
+    max-height: 180mm !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1mm !important;
   }
 
   .chart-item {
     page-break-inside: avoid;
     box-shadow: none !important;
     border: 1px solid #ddd !important;
-    padding: 0.75rem !important;
-    height: 280px !important;
+    padding: 1mm 3mm !important;
+    flex: 1 !important;
+    min-height: 0 !important;
     overflow: hidden !important;
   }
 
   .chart-item > div {
-    height: 260px !important;
+    height: calc(100% - 5mm) !important;
     margin-top: 0 !important;
+  }
+
+  .chart-item h3 {
+    margin: 0 !important;
+    font-size: 0.8rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .chart-item .recharts-legend-wrapper {
+    padding-top: 2px !important;
+    font-size: 0.65rem !important;
   }
 
   .analysis-section {
@@ -1337,19 +1439,102 @@ h1 {
     border: 1px solid #ccc !important;
   }
 
+  .pac-header {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .pac-header-meta {
+    font-size: 0.7rem !important;
+    gap: 0.5rem !important;
+  }
+
   .pac-body {
     display: grid !important;
     grid-template-columns: 3fr 2fr !important;
-    gap: 1.5rem !important;
-    padding: 1.25rem !important;
+    gap: 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
 
-  .pac-header {
-    padding: 1rem 1.25rem !important;
+  .pac-section {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .pac-section h5 {
+    margin: 0 0 0.3rem 0 !important;
+    font-size: 0.75rem !important;
+    padding-bottom: 0.2rem !important;
+  }
+
+  .pac-data-grid {
+    gap: 0.15rem !important;
+  }
+
+  .pac-data-row {
+    padding: 0.1rem 0 !important;
+  }
+
+  .pac-data-label {
+    font-size: 0.7rem !important;
+  }
+
+  .pac-data-value {
+    font-size: 0.7rem !important;
+  }
+
+  .pac-coverage-period {
+    margin-top: 0.25rem !important;
+    font-size: 0.7rem !important;
+    padding: 0.2rem 0.4rem !important;
   }
 
   .mini-chart-container {
-    margin-bottom: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .mini-chart-container .recharts-wrapper {
+    height: 140px !important;
+  }
+
+  .mini-chart-container > div:first-child {
+    height: 140px !important;
+  }
+
+  .mini-chart-legend {
+    margin-top: 0.15rem !important;
+    font-size: 0.65rem !important;
+  }
+
+  .pac-evaluations {
+    gap: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .eval-badge {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .eval-badge-header {
+    font-size: 0.7rem !important;
+  }
+
+  .eval-badge-text {
+    font-size: 0.65rem !important;
+  }
+
+  .pac-consultant-note {
+    padding: 0.4rem 0.6rem !important;
+  }
+
+  .pac-consultant-note h5 {
+    font-size: 0.75rem !important;
+    margin: 0 0 0.25rem 0 !important;
+  }
+
+  .consultant-note-input {
+    font-size: 0.7rem !important;
+    line-height: 1.4 !important;
+    padding: 0.2rem !important;
   }
 
   .pm-totals {
@@ -1377,6 +1562,14 @@ h1 {
 
   .portfolio-insights {
     page-break-inside: avoid;
+  }
+
+  .consultant-note-input {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    resize: none !important;
   }
 
 }

@@ -102,6 +102,10 @@ function App() {
     });
   };
 
+  const handleUpdateNote = (policyId: string, note: string) => {
+    setPolicies(prev => prev.map(p => p.id === policyId ? { ...p, consultantNote: note } : p));
+  };
+
   const handleEditStart = (policy: Policy) => {
     setEditingPolicy(policy);
     setIsFormOpen(true);
@@ -193,6 +197,7 @@ function App() {
           policies={policies}
           currentAge={currentAge}
           familyMembers={familyMembers}
+          onUpdateNote={handleUpdateNote}
         />
 
         <PolicyForm

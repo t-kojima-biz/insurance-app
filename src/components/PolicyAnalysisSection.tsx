@@ -8,9 +8,10 @@ interface PolicyAnalysisSectionProps {
   policies: Policy[];
   currentAge: number;
   familyMembers: FamilyMember[];
+  onUpdateNote: (policyId: string, note: string) => void;
 }
 
-const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ policies, currentAge, familyMembers }) => {
+const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ policies, currentAge, familyMembers, onUpdateNote }) => {
   if (policies.length === 0) return null;
 
   return (
@@ -30,6 +31,7 @@ const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ policies,
               policy={policy}
               currentAge={currentAge}
               familyMembers={familyMembers}
+              onUpdateNote={onUpdateNote}
             />
           ))}
         </div>

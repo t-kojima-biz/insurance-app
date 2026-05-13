@@ -19,11 +19,23 @@ interface CoverageChartProps {
 const formatAxisTick = (value: number | string) =>
   Number(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
 
+const isDecreasing = (policy: Policy) => {
+  if (policy.policyType === '収入保障保険') return true;
+  if (policy.policyEndAge !== 999) return true;
+  return false;
+};
+
 const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) => {
+  const sortedPolicies = [...policies].sort((a, b) => {
+    const aDec = isDecreasing(a) ? 1 : 0;
+    const bDec = isDecreasing(b) ? 1 : 0;
+    return aDec - bDec;
+  });
+
   const data = [];
   for (let age = currentAge; age <= 90; age++) {
     const dataPoint: any = { age };
-    policies.forEach((policy) => {
+    sortedPolicies.forEach((policy) => {
       if (age < policy.policyEndAge || policy.policyEndAge === 999) {
         let amount = policy.deathBenefitDisease;
         
@@ -42,7 +54,7 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
     data.push(dataPoint);
   }
 
-  const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
+  const colors = ['#a5b4fc', '#86efac', '#fde68a', '#fdba74'];
 
   return (
     <div style={{ width: '100%', height: 350, marginTop: '20px' }}>
@@ -50,7 +62,7 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
       <ResponsiveContainer>
         <AreaChart
           data={data}
-          margin={{ top: 10, right: 30, left: 40, bottom: 20 }}
+          margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
@@ -65,10 +77,10 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
           <Tooltip 
             formatter={(value: any) => [`${formatAxisTick(value)}万円`, '']}
           />
-          <Legend 
-            wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold', fontSize: '14px' }}
+          <Legend
+            wrapperStyle={{ paddingTop: '5px', fontWeight: 'bold', fontSize: '12px' }}
           />
-          {policies.map((policy, index) => (
+          {sortedPolicies.map((policy, index) => (
             policy.deathBenefitDisease > 0 && (
               <Area
                 key={policy.id}

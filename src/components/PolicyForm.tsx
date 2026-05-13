@@ -49,6 +49,41 @@ const CommaInput: React.FC<{
   );
 };
 
+const CommaInputRaw: React.FC<{
+  value: number;
+  onChange: (n: number) => void;
+  placeholder?: string;
+}> = ({ value, onChange, placeholder }) => {
+  const [display, setDisplay] = useState(formatComma(value));
+
+  useEffect(() => {
+    setDisplay(formatComma(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^\d]/g, '');
+    if (raw === '') {
+      setDisplay('');
+      onChange(0);
+    } else {
+      const num = Number(raw);
+      setDisplay(num.toLocaleString());
+      onChange(num);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={display}
+      onChange={handleChange}
+      onFocus={() => setDisplay(formatComma(value))}
+      placeholder={placeholder}
+    />
+  );
+};
+
 const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyMembers, editingPolicy, onCancel }) => {
   const [formData, setFormData] = useState<Partial<Policy>>({
     companyName: '',
@@ -95,6 +130,19 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyM
   };
 
   const setField = (field: string, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const isPension = formData.policyType === '個人年金保険';
+
+  const [calcTotal, setCalcTotal] = useState<number | null>(null);
+
+  const handleCalcTotal = () => {
+    const freqMult = formData.paymentFrequency === 'monthly' ? 12 : formData.paymentFrequency === 'annual' ? 1 : 0;
+    const paymentYears = Math.max(0, (formData.paymentEndAge || 0) - (formData.contractAge || 0));
+    const total = formData.paymentFrequency === 'single'
+      ? (formData.premiumAmount || 0)
+      : (formData.premiumAmount || 0) * freqMult * paymentYears;
+    setCalcTotal(total);
+  };
 
   if (!isOpen) return null;
 
@@ -156,6 +204,15 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyM
             <CommaInput label="保険料（1回あたり）(円)" value={formData.premiumAmount || 0} onChange={v => setField('premiumAmount', v)} />
             <div className="form-group"><label>払込終了年齢（歳）</label><input type="number" value={formData.paymentEndAge} onChange={e => setField('paymentEndAge', Number(e.target.value))} /></div>
             <CommaInput label="満期保険金 (円)" value={formData.maturityBenefit || 0} onChange={v => setField('maturityBenefit', v)} />
+            {isPension && (
+              <>
+                <div className="form-group">
+                  <label className="label-with-btn">払込総額 (円) <button type="button" className="calc-btn" onClick={handleCalcTotal}>計算</button></label>
+                  <CommaInputRaw value={calcTotal ?? 0} onChange={setCalcTotal} placeholder="直接入力 or 計算ボタン" />
+                </div>
+                <CommaInput label="年金原資（受取総額）(円)" value={formData.maturityBenefit || 0} onChange={v => setField('maturityBenefit', v)} />
+              </>
+            )}
           </section>
 
           <div className="form-actions full-width">

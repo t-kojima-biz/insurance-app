@@ -7,7 +7,7 @@ interface PrintCoverPageProps {
   agency: Agency;
 }
 
-const PrintCoverPage: React.FC<PrintCoverPageProps> = ({ customerName, birthDate, agency }) => {
+const PrintCoverPage: React.FC<PrintCoverPageProps> = ({ customerName, agency }) => {
   const today = new Date();
   // 和暦表示の簡易版 (2026年 = 令和8年)
   const reiwaYear = today.getFullYear() - 2018;

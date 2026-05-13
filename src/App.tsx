@@ -83,6 +83,25 @@ function App() {
     }
   };
 
+  const handleReorderPolicy = (draggedId: string, targetId: string, position: 'before' | 'after') => {
+    setPolicies(currentPolicies => {
+      const fromIndex = currentPolicies.findIndex(policy => policy.id === draggedId);
+      const targetIndex = currentPolicies.findIndex(policy => policy.id === targetId);
+
+      if (fromIndex === -1 || targetIndex === -1 || fromIndex === targetIndex) {
+        return currentPolicies;
+      }
+
+      const nextPolicies = [...currentPolicies];
+      const [movedPolicy] = nextPolicies.splice(fromIndex, 1);
+      const targetIndexAfterRemoval = nextPolicies.findIndex(policy => policy.id === targetId);
+      const insertionIndex = position === 'after' ? targetIndexAfterRemoval + 1 : targetIndexAfterRemoval;
+
+      nextPolicies.splice(insertionIndex, 0, movedPolicy);
+      return nextPolicies;
+    });
+  };
+
   const handleEditStart = (policy: Policy) => {
     setEditingPolicy(policy);
     setIsFormOpen(true);
@@ -158,6 +177,7 @@ function App() {
           onDelete={handleDeletePolicy}
           onEdit={handleEditStart}
           onAddNew={() => setIsFormOpen(true)}
+          onReorder={handleReorderPolicy}
         />
 
         <div className="charts-container">

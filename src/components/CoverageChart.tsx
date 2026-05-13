@@ -16,6 +16,9 @@ interface CoverageChartProps {
   currentAge: number;
 }
 
+const formatAxisTick = (value: number | string) =>
+  Number(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
+
 const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) => {
   const data = [];
   for (let age = currentAge; age <= 90; age++) {
@@ -56,9 +59,11 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
           />
           <YAxis 
             label={{ value: '保障額 (万円)', angle: -90, position: 'insideLeft', offset: -30 }} 
+            tickFormatter={formatAxisTick}
+            width={80}
           />
           <Tooltip 
-            formatter={(value: any) => [`${Math.round(value)}万円`, '']}
+            formatter={(value: any) => [`${formatAxisTick(value)}万円`, '']}
           />
           <Legend 
             wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold', fontSize: '14px' }}

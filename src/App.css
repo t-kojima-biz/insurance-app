@@ -121,6 +121,75 @@ h1 {
   background: #f1f5f9;
 }
 
+.policy-table .order-col,
+.policy-table .order-cell {
+  width: 2.75rem;
+  text-align: center;
+}
+
+.policy-table .order-cell {
+  color: #475569;
+  font-weight: 700;
+}
+
+.policy-table .drag-col,
+.policy-table .drag-cell {
+  width: 2.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  text-align: center;
+}
+
+.policy-row.is-dragging {
+  opacity: 0.55;
+  background: #eff6ff;
+}
+
+.policy-row.is-drag-over-before td {
+  box-shadow: inset 0 2px 0 #3182ce;
+}
+
+.policy-row.is-drag-over-after td {
+  box-shadow: inset 0 -2px 0 #3182ce;
+}
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: grab;
+}
+
+.drag-handle:hover,
+.drag-handle:focus-visible {
+  color: #3182ce;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  outline: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .policy-table .total-row {
   background: #f8fafc;
   border-top: 2px solid #cbd5e1;
@@ -1197,7 +1266,7 @@ h1 {
     background: transparent !important;
   }
 
-  .settings-icon, .actions-col, .actions-cell {
+  .settings-icon, .actions-col, .actions-cell, .drag-col, .drag-cell {
     display: none !important;
   }
 

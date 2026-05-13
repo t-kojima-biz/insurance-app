@@ -65,10 +65,13 @@ const PolicyMiniChart: React.FC<PolicyMiniChartProps> = ({ policy, currentAge })
             width={45}
             label={{ value: unit, angle: -90, position: 'insideLeft', offset: 5, fontSize: 11 }}
           />
-          <Tooltip
-            formatter={(value: number) => [`${value.toLocaleString()}${unit}`, '保障額']}
-            labelFormatter={(label) => `${label}歳`}
-          />
+         <Tooltip
+  formatter={(value) => [
+    `${Number(value ?? 0).toLocaleString()}${unit}`,
+    '保障額',
+  ]}
+  labelFormatter={(label) => `${label}歳`}
+/>
           <Area
             type="stepAfter"
             dataKey="value"

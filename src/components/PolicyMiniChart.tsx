@@ -121,7 +121,7 @@ const PolicyMiniChart: React.FC<PolicyMiniChartProps> = ({ policy, currentAge })
 const PensionMiniChart: React.FC<{
   policy: Policy;
   currentAge: number;
-  typeInfo: ReturnType<typeof INSURANCE_TYPE_INFO[keyof typeof INSURANCE_TYPE_INFO] & {}>;
+  typeInfo: (typeof INSURANCE_TYPE_INFO)[keyof typeof INSURANCE_TYPE_INFO];
 }> = ({ policy, currentAge }) => {
   const startAge = policy.contractAge;
   const annuityStartAge = policy.paymentEndAge;
@@ -165,12 +165,12 @@ const PensionMiniChart: React.FC<{
             label={{ value: '万円', angle: -90, position: 'insideLeft', offset: 5, fontSize: 11 }}
           />
           <Tooltip
-            formatter={(value: number, name: string) => [
-              `${Number(value ?? 0).toLocaleString()}万円`,
-              name === 'accumulation' ? '年金原資' : '年金受取額',
-            ]}
-            labelFormatter={(label) => `${label}歳`}
-          />
+  formatter={(value, name) => [
+    `${Number(value ?? 0).toLocaleString()}万円`,
+    name === 'accumulation' ? '年金原資' : '年金受取額',
+  ]}
+  labelFormatter={(label) => `${label}歳`}
+/>
           <Area
             type="monotone"
             dataKey="accumulation"

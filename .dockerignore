@@ -6,3 +6,5 @@ dist
 docker-compose*.yml
 .dockerignore
 .env*
+data/
+*.sqlite*

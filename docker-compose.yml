@@ -45,9 +45,13 @@ services:
       - ./src:/app/src:ro
       - ./public:/app/public:ro
       - ./index.html:/app/index.html:ro
+      - ./server:/app/server:ro
+      - ./data:/app/data
     environment:
       <<: *common-env
       NODE_ENV: development
+      API_PORT: "3021"
+      DATABASE_PATH: "/app/data/insurance.sqlite"
     init: true
     restart: unless-stopped
     logging: *default-logging

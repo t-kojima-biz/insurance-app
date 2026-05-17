@@ -40,3 +40,20 @@ export interface Agency {
   representative: string;
   phone: string;
 }
+
+export interface AppState {
+  familyMembers: FamilyMember[];
+  agency: Agency;
+  policies: Policy[];
+  updatedAt?: string;
+}
+
+export interface CsvImportResult {
+  importedCount?: number;
+  failedCount?: number;
+  errors?: { row: number; message: string }[];
+  state?: AppState;
+  code?: string;
+  message?: string;
+  duplicates?: { row: number; policyNumber: string; existingPolicyId: string }[];
+}

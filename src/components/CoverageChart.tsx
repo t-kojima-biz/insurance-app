@@ -62,23 +62,21 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
       <ResponsiveContainer>
         <AreaChart
           data={data}
-          margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+          margin={{ top: 5, right: 30, left: 40, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis 
-            dataKey="age" 
-            label={{ value: '年齢', position: 'insideBottomRight', offset: -10 }} 
-          />
-          <YAxis 
-            label={{ value: '保障額 (万円)', angle: -90, position: 'insideLeft', offset: -30 }} 
+          <XAxis dataKey="age" />
+          <YAxis
+            label={{ value: '保障額 (万円)', angle: -90, position: 'insideLeft', offset: -30 }}
             tickFormatter={formatAxisTick}
             width={80}
           />
-          <Tooltip 
+          <Tooltip
             formatter={(value: any) => [`${formatAxisTick(value)}万円`, '']}
           />
           <Legend
-            wrapperStyle={{ paddingTop: '5px', fontWeight: 'bold', fontSize: '12px' }}
+            verticalAlign="top"
+            wrapperStyle={{ paddingBottom: '5px', fontWeight: 'bold', fontSize: '12px' }}
           />
           {sortedPolicies.map((policy, index) => (
             policy.deathBenefitDisease > 0 && (

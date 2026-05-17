@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Policy, FamilyMember } from '../types';
-import { Calculator, MessageSquare, Landmark } from 'lucide-react';
+import { Calculator, MessageSquare, Landmark, ClipboardList } from 'lucide-react';
 import {
   analyzePolicy,
   INSURANCE_TYPE_INFO,
@@ -37,6 +37,10 @@ const PolicyAnalysisCard: React.FC<PolicyAnalysisCardProps> = ({ policy, current
 
   return (
     <div className={`policy-analysis-card ${analysis.isExpired ? 'expired-card' : ''}`}>
+      <h3 className="pac-print-section-title">
+        <ClipboardList size={20} />
+        個々の保険の分析
+      </h3>
       <div className="pac-header">
         <div className="pac-header-left">
           <span

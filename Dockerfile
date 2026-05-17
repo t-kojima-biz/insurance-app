@@ -14,7 +14,7 @@ ARG APP_PATH=insurance
 # =============================================================================
 FROM node:${NODE_VERSION}-alpine AS base
 RUN apk upgrade --no-cache && \
-    apk add --no-cache libc6-compat
+    apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 # =============================================================================
@@ -30,10 +30,11 @@ RUN --mount=type=cache,id=npm-store-insurance,target=/root/.npm \
 # =============================================================================
 FROM deps AS dev
 ARG APP_PORT
-ENV NODE_ENV=development TZ=Asia/Tokyo APP_PORT=${APP_PORT}
+ARG API_PORT=3021
+ENV NODE_ENV=development TZ=Asia/Tokyo APP_PORT=${APP_PORT} API_PORT=${API_PORT} DATABASE_PATH=/app/data/insurance.sqlite
 COPY . .
-EXPOSE ${APP_PORT}
-CMD npm run dev -- --host --port ${APP_PORT}
+EXPOSE ${APP_PORT} ${API_PORT}
+CMD npm run dev:all
 
 # =============================================================================
 # Builder - production build

@@ -32,6 +32,9 @@ const HEADER_MAP: Record<string, string> = {
   '払込終了年齢': 'paymentEndAge',
   '満期保険金': 'maturityBenefit',
   'コンサルタントメモ': 'consultantNote',
+  'フリガナ': 'nameKana',
+  'カナ': 'nameKana',
+  '氏名カナ': 'nameKana',
 };
 
 interface CsvRow {

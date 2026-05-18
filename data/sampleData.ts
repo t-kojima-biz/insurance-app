@@ -2,8 +2,8 @@ import type { FamilyMember, Policy, Agency } from '@/types';
 
 export function getSampleFamilyMembers(): FamilyMember[] {
   return [
-    { id: 'm1', name: '佐々木健介', relationship: '本人', birthDate: '1966-08-04', gender: 'male' },
-    { id: 'm2', name: '北斗晶', relationship: '配偶者', birthDate: '1985-04-12', gender: 'female' },
+    { id: 'm1', name: '佐々木健介', nameKana: 'ササキケンスケ', relationship: '本人', birthDate: '1966-08-04', gender: 'male' },
+    { id: 'm2', name: '北斗晶', nameKana: 'ホクトアキラ', relationship: '配偶者', birthDate: '1985-04-12', gender: 'female' },
   ];
 }
 

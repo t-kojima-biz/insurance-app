@@ -3,6 +3,7 @@ export type PolicyType = '個人年金保険' | '収入保障保険' | '変額�
 export interface FamilyMember {
   id: string;
   name: string;
+  nameKana: string;
   relationship: string; // 本人、配偶者、長男など
   birthDate: string;
   gender: 'male' | 'female';
@@ -36,6 +37,13 @@ export interface Policy {
 }
 
 export interface Agency {
+  name: string;
+  representative: string;
+  phone: string;
+}
+
+export interface AgencyMaster {
+  id: string;
   name: string;
   representative: string;
   phone: string;

@@ -1,9 +1,10 @@
-import type { AppState, CsvImportResult } from '@/types';
+import type { AppState, AgencyMaster, CsvImportResult } from '@/types';
 
 export interface CaseSummary {
   id: string;
   title: string;
   primaryMemberName: string;
+  primaryMemberNameKana: string;
   memberCount: number;
   policyCount: number;
   updatedAt: string | null;
@@ -92,4 +93,28 @@ export async function importCsv(
 
 export function checkHealth(): Promise<{ status: string; database: string }> {
   return request('/api/health');
+}
+
+export function fetchAgencyMasters(): Promise<AgencyMaster[]> {
+  return request<AgencyMaster[]>('/api/agency-masters');
+}
+
+export function createAgencyMaster(data: Omit<AgencyMaster, 'id'>): Promise<AgencyMaster> {
+  return request<AgencyMaster>('/api/agency-masters', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateAgencyMaster(id: string, data: Omit<AgencyMaster, 'id'>): Promise<AgencyMaster> {
+  return request<AgencyMaster>(`/api/agency-masters/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteAgencyMaster(id: string): Promise<{ ok: boolean }> {
+  return request(`/api/agency-masters/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

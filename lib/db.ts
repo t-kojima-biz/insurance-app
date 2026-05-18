@@ -43,6 +43,7 @@ function runMigrations(db: Database.Database): void {
       id TEXT PRIMARY KEY,
       case_id TEXT NOT NULL,
       name TEXT NOT NULL,
+      name_kana TEXT NOT NULL DEFAULT '',
       relationship TEXT NOT NULL,
       birth_date TEXT NOT NULL,
       gender TEXT NOT NULL CHECK (gender IN ('male', 'female')),
@@ -91,6 +92,15 @@ function runMigrations(db: Database.Database): void {
       FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS agency_masters (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      representative TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_family_members_case_id_sort_order
       ON family_members(case_id, sort_order);
 
@@ -106,4 +116,10 @@ function runMigrations(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_policies_beneficiary_member_id
       ON policies(beneficiary_member_id);
   `);
+
+  try {
+    db.exec(`ALTER TABLE family_members ADD COLUMN name_kana TEXT NOT NULL DEFAULT ''`);
+  } catch {
+    // column already exists
+  }
 }

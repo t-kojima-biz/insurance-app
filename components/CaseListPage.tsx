@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Trash2, Search, UserPlus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, Search, UserPlus, ArrowUpDown, ArrowUp, ArrowDown, Building2 } from 'lucide-react';
+import AgencyMasterModal from '@/components/AgencyMasterModal';
 import { fetchCases, createCase, deleteCase } from '@/lib/api';
 import type { CaseSummary } from '@/lib/api';
 
@@ -41,6 +42,7 @@ export default function CaseListPage({ onSelect }: Props) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('updated');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [showAgencyMaster, setShowAgencyMaster] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -89,7 +91,10 @@ export default function CaseListPage({ onSelect }: Props) {
   const filteredSorted = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = q
-      ? cases.filter(c => (c.primaryMemberName || '').toLowerCase().includes(q))
+      ? cases.filter(c =>
+          (c.primaryMemberName || '').toLowerCase().includes(q) ||
+          (c.primaryMemberNameKana || '').toLowerCase().includes(q)
+        )
       : [...cases];
 
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -128,9 +133,14 @@ export default function CaseListPage({ onSelect }: Props) {
             {cases.length > 0 && <span className="case-list-total">（全 {cases.length} 件）</span>}
           </p>
         </div>
-        <button className="case-create-btn" onClick={handleCreate}>
-          <Plus size={18} /> 新規お客様
-        </button>
+        <div className="case-list-actions">
+          <button className="case-agency-btn" onClick={() => setShowAgencyMaster(true)}>
+            <Building2 size={18} /> 代理店管理
+          </button>
+          <button className="case-create-btn" onClick={handleCreate}>
+            <Plus size={18} /> 新規お客様
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -239,6 +249,7 @@ export default function CaseListPage({ onSelect }: Props) {
           </table>
         </div>
       )}
+      {showAgencyMaster && <AgencyMasterModal onClose={() => setShowAgencyMaster(false)} />}
     </div>
   );
 }

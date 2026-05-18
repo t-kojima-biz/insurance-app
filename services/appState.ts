@@ -7,6 +7,7 @@ interface FamilyMemberRow {
   id: string;
   case_id: string;
   name: string;
+  name_kana: string;
   relationship: string;
   birth_date: string;
   gender: string;
@@ -56,6 +57,7 @@ function rowToFamilyMember(row: FamilyMemberRow): FamilyMember {
   return {
     id: row.id,
     name: row.name,
+    nameKana: row.name_kana,
     relationship: row.relationship,
     birthDate: row.birth_date,
     gender: row.gender as 'male' | 'female',
@@ -106,10 +108,10 @@ function insertSampleData(caseId: string): void {
   db.prepare('INSERT INTO agencies (id, case_id, name, representative, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(agencyId, caseId, agency.name, agency.representative, agency.phone, ts, ts);
 
   const members = getSampleFamilyMembers();
-  const insertMember = db.prepare('INSERT INTO family_members (id, case_id, name, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const insertMember = db.prepare('INSERT INTO family_members (id, case_id, name, name_kana, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
-    insertMember.run(m.id, caseId, m.name, m.relationship, m.birthDate, m.gender, i, ts, ts);
+    insertMember.run(m.id, caseId, m.name, m.nameKana, m.relationship, m.birthDate, m.gender, i, ts, ts);
   }
 
   const policies = getSamplePolicies();
@@ -158,10 +160,10 @@ export function saveAppState(caseId: string, state: AppState): AppState {
     db.prepare('DELETE FROM policies WHERE case_id = ?').run(caseId);
     db.prepare('DELETE FROM family_members WHERE case_id = ?').run(caseId);
 
-    const insertMember = db.prepare('INSERT INTO family_members (id, case_id, name, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const insertMember = db.prepare('INSERT INTO family_members (id, case_id, name, name_kana, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     for (let i = 0; i < state.familyMembers.length; i++) {
       const m = state.familyMembers[i];
-      insertMember.run(m.id, caseId, m.name, m.relationship, m.birthDate, m.gender, i, ts, ts);
+      insertMember.run(m.id, caseId, m.name, m.nameKana ?? '', m.relationship, m.birthDate, m.gender, i, ts, ts);
     }
 
     const existingAgency = db.prepare('SELECT id FROM agencies WHERE case_id = ?').get(caseId) as { id: string } | undefined;
@@ -207,7 +209,7 @@ export function clearData(caseId: string): AppState {
     db.prepare('DELETE FROM family_members WHERE case_id = ?').run(caseId);
 
     const defaultMemberId = 'm1';
-    db.prepare('INSERT INTO family_members (id, case_id, name, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(defaultMemberId, caseId, '', '本人', new Date().toISOString().split('T')[0], 'male', 0, ts, ts);
+    db.prepare('INSERT INTO family_members (id, case_id, name, name_kana, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(defaultMemberId, caseId, '', '', '本人', new Date().toISOString().split('T')[0], 'male', 0, ts, ts);
 
     const existingAgency = db.prepare('SELECT id FROM agencies WHERE case_id = ?').get(caseId) as { id: string } | undefined;
     if (!existingAgency) {

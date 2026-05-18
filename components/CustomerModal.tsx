@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import type { FamilyMember, Agency } from '@/types';
-import { User, X, Plus, Trash2, Building2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import type { FamilyMember, Agency, AgencyMaster } from '@/types';
+import { fetchAgencyMasters } from '@/lib/api';
+import { User, X, Plus, Trash2, Building2, Download } from 'lucide-react';
 
 interface CustomerModalProps {
   familyMembers: FamilyMember[];
@@ -11,14 +12,26 @@ interface CustomerModalProps {
   onClose: () => void;
 }
 
+function toKatakana(str: string): string {
+  return str.replace(/[ぁ-ゖ]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) + 0x60)
+  );
+}
+
 const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, onSave, onClose }) => {
   const [tempMembers, setTempMembers] = useState<FamilyMember[]>(familyMembers);
   const [tempAgency, setTempAgency] = useState<Agency>(agency);
+  const [agencyMasters, setAgencyMasters] = useState<AgencyMaster[]>([]);
+
+  useEffect(() => {
+    fetchAgencyMasters().then(setAgencyMasters).catch(() => {});
+  }, []);
 
   const handleAddMember = () => {
     const newMember: FamilyMember = {
       id: Math.random().toString(36).substr(2, 9),
       name: '',
+      nameKana: '',
       relationship: '',
       birthDate: new Date().toISOString().split('T')[0],
       gender: 'male'
@@ -31,8 +44,16 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
     setTempMembers(tempMembers.filter(m => m.id !== id));
   };
 
-  const updateMember = (id: string, field: keyof FamilyMember, value: any) => {
-    setTempMembers(tempMembers.map(m => m.id === id ? { ...m, [field]: value } : m));
+  const updateMember = (id: string, field: keyof FamilyMember, value: string) => {
+    const finalValue = field === 'nameKana' ? toKatakana(value) : value;
+    setTempMembers(tempMembers.map(m => m.id === id ? { ...m, [field]: finalValue } : m));
+  };
+
+  const handleLoadAgencyMaster = (masterId: string) => {
+    const master = agencyMasters.find(m => m.id === masterId);
+    if (master) {
+      setTempAgency({ name: master.name, representative: master.representative, phone: master.phone });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,6 +85,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
                 <div className="form-group"><label>氏名</label>
                   <input type="text" value={member.name} onChange={e => updateMember(member.id, 'name', e.target.value)} required />
                 </div>
+                <div className="form-group"><label>フリガナ</label>
+                  <input type="text" value={member.nameKana} placeholder="カタカナ"
+                    onChange={e => updateMember(member.id, 'nameKana', e.target.value)} />
+                </div>
                 <div className="form-group"><label>生年月日</label>
                   <input type="date" value={member.birthDate} onChange={e => updateMember(member.id, 'birthDate', e.target.value)} required />
                 </div>
@@ -79,6 +104,17 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
           <button type="button" className="add-member-btn" onClick={handleAddMember}><Plus size={16} /> 家族を追加</button>
 
           <h4 style={{marginTop: '2rem'}}><div className="title-with-icon"><Building2 size={20} className="icon" /> 代理店情報</div></h4>
+          {agencyMasters.length > 0 && (
+            <div className="form-group" style={{marginBottom: '1rem'}}>
+              <label><Download size={14} style={{marginRight: '4px', verticalAlign: '-2px'}} />マスターから読込</label>
+              <select defaultValue="" onChange={e => { if (e.target.value) handleLoadAgencyMaster(e.target.value); }}>
+                <option value="">選択してください</option>
+                {agencyMasters.map(m => (
+                  <option key={m.id} value={m.id}>{m.name} ({m.representative})</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid-form">
             <div className="form-group"><label>代理店名</label>
               <input type="text" value={tempAgency.name} onChange={e => setTempAgency({...tempAgency, name: e.target.value})} required />

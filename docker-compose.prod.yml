@@ -17,6 +17,7 @@ services:
       target: runner
     environment:
       TZ: Asia/Tokyo
+      NODE_ENV: production
     init: false
     volumes: []
     healthcheck:

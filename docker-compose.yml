@@ -35,28 +35,28 @@ services:
       target: dev
       args:
         APP_PORT: "3020"
-        APP_PATH: insurance
-        APP_TITLE: "Insurance App"
-        APP_DESCRIPTION: "保険管理アプリケーション"
     container_name: insurance-app
     ports:
       - "3020:3020"
     volumes:
-      - ./src:/app/src:ro
-      - ./public:/app/public:ro
-      - ./index.html:/app/index.html:ro
-      - ./server:/app/server:ro
+      - ./app:/app/app:ro
+      - ./components:/app/components:ro
+      - ./lib:/app/lib:ro
+      - ./services:/app/services:ro
+      - ./validators:/app/validators:ro
+      - ./utils:/app/utils:ro
       - ./data:/app/data
+      - ./public:/app/public:ro
+      - ./types.ts:/app/types.ts:ro
     environment:
       <<: *common-env
       NODE_ENV: development
-      API_PORT: "3021"
       DATABASE_PATH: "/app/data/insurance.sqlite"
     init: true
     restart: unless-stopped
     logging: *default-logging
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3020/insurance/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3020/api/health || exit 1"]
       <<: *healthcheck-defaults
       start_period: 60s
     deploy:

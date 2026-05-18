@@ -2,45 +2,29 @@
   "name": "insurance-app",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "server": "tsx watch server/index.ts",
-    "dev:all": "concurrently \"npm run dev -- --host --port 3020\" \"npm run server\""
+    "dev": "next dev --port 3020",
+    "build": "next build",
+    "start": "next start --port 3020",
+    "lint": "next lint"
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1",
     "csv-parse": "^5.6.0",
-    "express": "^5.1.0",
     "iconv-lite": "^0.6.3",
     "lucide-react": "^1.14.0",
-    "multer": "^2.0.1",
+    "next": "^16.0.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "recharts": "^3.8.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/express": "^5.0.2",
-    "@types/multer": "^1.4.12",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
-    "@vitejs/plugin-react": "^6.0.1",
-    "concurrently": "^9.1.2",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "tsx": "^4.19.4",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "typescript": "~6.0.2"
   }
 }

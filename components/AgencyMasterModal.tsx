@@ -78,9 +78,11 @@ const AgencyMasterModal: React.FC<AgencyMasterModalProps> = ({ onClose }) => {
     }
   };
 
+  const hasRows = masters.length > 0 || showNewForm;
+
   return (
     <div className="form-overlay">
-      <div className="form-container wide-form">
+      <div className="form-container agency-master-modal">
         <div className="modal-header">
           <div className="title-with-icon">
             <Building2 className="icon" />
@@ -97,79 +99,84 @@ const AgencyMasterModal: React.FC<AgencyMasterModalProps> = ({ onClose }) => {
         )}
 
         {isLoading ? (
-          <p style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>読み込み中...</p>
+          <div className="am-empty">読み込み中...</div>
         ) : (
           <>
-            {masters.length === 0 && !showNewForm ? (
-              <p style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>代理店マスターがありません</p>
-            ) : (
-              <table className="agency-master-table">
-                <thead>
-                  <tr>
-                    <th>代理店名</th>
-                    <th>取扱者</th>
-                    <th>電話番号</th>
-                    <th style={{ width: '80px' }}>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {masters.map(master => (
-                    <tr key={master.id}>
-                      {editingId === master.id ? (
-                        <>
-                          <td><input type="text" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} /></td>
-                          <td><input type="text" value={editForm.representative} onChange={e => setEditForm({ ...editForm, representative: e.target.value })} /></td>
-                          <td><input type="text" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} /></td>
-                          <td className="action-cell">
-                            <button type="button" className="icon-btn save" onClick={handleSaveEdit} title="保存"><Check size={16} /></button>
-                            <button type="button" className="icon-btn" onClick={() => setEditingId(null)} title="キャンセル"><X size={16} /></button>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td>{master.name}</td>
-                          <td>{master.representative}</td>
-                          <td>{master.phone}</td>
-                          <td className="action-cell">
-                            <button type="button" className="icon-btn" onClick={() => handleStartEdit(master)} title="編集"><Pencil size={16} /></button>
-                            <button type="button" className="icon-btn danger" onClick={() => handleDelete(master.id)} title="削除"><Trash2 size={16} /></button>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {showNewForm ? (
-              <div className="agency-new-form">
-                <div className="grid-form">
-                  <div className="form-group"><label>代理店名</label>
-                    <input type="text" value={newForm.name} onChange={e => setNewForm({ ...newForm, name: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>取扱者</label>
-                    <input type="text" value={newForm.representative} onChange={e => setNewForm({ ...newForm, representative: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>電話番号</label>
-                    <input type="text" value={newForm.phone} onChange={e => setNewForm({ ...newForm, phone: e.target.value })} />
-                  </div>
-                </div>
-                <div className="form-actions" style={{ marginTop: '0.5rem' }}>
-                  <button type="button" className="save-btn" onClick={handleCreate}>追加</button>
-                  <button type="button" className="cancel-btn" onClick={() => { setShowNewForm(false); setNewForm({ name: '', representative: '', phone: '' }); }}>キャンセル</button>
-                </div>
+            {!hasRows ? (
+              <div className="am-empty">
+                <Building2 size={36} strokeWidth={1.2} />
+                <p>代理店マスターがありません</p>
+                <span>「代理店を追加」から登録してください</span>
               </div>
             ) : (
-              <button type="button" className="add-member-btn" style={{ marginTop: '1rem' }} onClick={() => setShowNewForm(true)}>
-                <Plus size={16} /> 代理店を追加
+              <div className="am-table-wrap">
+                <table className="am-table">
+                  <thead>
+                    <tr>
+                      <th>代理店名</th>
+                      <th>取扱者</th>
+                      <th>電話番号</th>
+                      <th className="am-th-actions">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {masters.map(master => (
+                      <tr key={master.id}>
+                        {editingId === master.id ? (
+                          <>
+                            <td><input type="text" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} placeholder="代理店名" /></td>
+                            <td><input type="text" value={editForm.representative} onChange={e => setEditForm({ ...editForm, representative: e.target.value })} placeholder="取扱者" /></td>
+                            <td><input type="text" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} placeholder="電話番号" /></td>
+                            <td>
+                              <div className="am-actions">
+                                <button type="button" className="am-icon-btn am-icon-save" onClick={handleSaveEdit} title="保存"><Check size={15} /></button>
+                                <button type="button" className="am-icon-btn" onClick={() => setEditingId(null)} title="キャンセル"><X size={15} /></button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td>{master.name}</td>
+                            <td>{master.representative}</td>
+                            <td>{master.phone}</td>
+                            <td>
+                              <div className="am-actions">
+                                <button type="button" className="am-icon-btn" onClick={() => handleStartEdit(master)} title="編集"><Pencil size={14} /></button>
+                                <button type="button" className="am-icon-btn am-icon-danger" onClick={() => handleDelete(master.id)} title="削除"><Trash2 size={14} /></button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                    {showNewForm && (
+                      <tr className="am-new-row">
+                        <td><input type="text" value={newForm.name} onChange={e => setNewForm({ ...newForm, name: e.target.value })} placeholder="代理店名" autoFocus /></td>
+                        <td><input type="text" value={newForm.representative} onChange={e => setNewForm({ ...newForm, representative: e.target.value })} placeholder="取扱者" /></td>
+                        <td><input type="text" value={newForm.phone} onChange={e => setNewForm({ ...newForm, phone: e.target.value })} placeholder="電話番号" /></td>
+                        <td>
+                          <div className="am-actions">
+                            <button type="button" className="am-icon-btn am-icon-save" onClick={handleCreate} title="追加"><Check size={15} /></button>
+                            <button type="button" className="am-icon-btn" onClick={() => { setShowNewForm(false); setNewForm({ name: '', representative: '', phone: '' }); }} title="キャンセル"><X size={15} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {!showNewForm && (
+              <button type="button" className="am-add-btn" onClick={() => setShowNewForm(true)}>
+                <Plus size={15} /> 代理店を追加
               </button>
             )}
           </>
         )}
 
-        <div className="form-actions" style={{ marginTop: '2rem' }}>
-          <button type="button" className="cancel-btn" onClick={onClose} style={{ flex: 1 }}>閉じる</button>
+        <div className="am-footer">
+          <button type="button" className="am-close-btn" onClick={onClose}>閉じる</button>
         </div>
       </div>
     </div>

@@ -1987,22 +1987,51 @@ h1 {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     page-break-after: always;
-    padding: 15mm;
+    padding: 0;
     margin: 0;
+    position: relative;
+    overflow: hidden;
   }
 
-  .cover-title-container {
+  .cover-accent-bar {
+    height: 6px;
+    background: linear-gradient(90deg, #1a365d 0%, #3182ce 50%, #63b3ed 100%);
+    flex-shrink: 0;
+  }
+
+  .cover-top {
+    padding: 12mm 15mm 0;
+  }
+
+  .cover-customer {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    border-bottom: 2px solid #000;
-    padding-bottom: 5px;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .cover-customer-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    letter-spacing: 0.1em;
+    margin-right: 6px;
+  }
+
+  .cover-customer-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a365d;
+    letter-spacing: 0.05em;
+  }
+
+  .cover-sama {
+    font-size: 1rem;
+    color: #475569;
+    margin-left: 4px;
   }
 
   .logo-container {
-    height: 60px;
+    height: 50px;
   }
 
   .agency-logo {
@@ -2011,36 +2040,97 @@ h1 {
     object-fit: contain;
   }
 
-  .creation-date-row {
-    text-align: right;
-    margin-top: 5px;
-    font-size: 0.9rem;
+  .cover-date {
+    font-size: 0.8rem;
+    color: #64748b;
+    letter-spacing: 0.03em;
   }
 
-  .customer-name-display {
-    font-size: 1.5rem;
-    text-decoration: underline;
-  }
-
-  .main-title {
-    font-size: 4rem;
-    text-align: center;
-    background-color: #e0ffff;
-    border: 2px solid #000;
-    padding: 2rem;
-    margin: 4rem 0;
-  }
-
-  .agent-info {
+  .cover-center {
+    flex: 1;
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15mm;
   }
 
-  .agent-box {
-    border: 1px solid #000;
-    padding: 1rem;
-    width: 400px;
-    font-size: 0.9rem;
+  .cover-title-main {
+    font-size: 3.2rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: 0.12em;
+    position: relative;
+    padding-bottom: 14px;
+  }
+
+  .cover-title-main::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, #3182ce, #63b3ed);
+    border-radius: 2px;
+  }
+
+  .cover-title-sub {
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .cover-bottom {
+    padding: 0 15mm 12mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid #e2e8f0;
+    margin: 0 15mm;
+    padding: 10px 0 0;
+  }
+
+  .cover-bottom-left {
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .cover-bottom-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .cover-agent {
+    border-left: 3px solid #3182ce;
+    padding: 6px 0 6px 14px;
+  }
+
+  .cover-agent-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+  }
+
+  .cover-agent-detail {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+
+  .cover-agent-divider {
+    display: inline-block;
+    width: 1px;
+    height: 12px;
+    background: #cbd5e1;
+    margin: 0 10px;
   }
 
   .customer-summary-display {
@@ -2086,10 +2176,14 @@ h1 {
   .charts-container {
     page-break-before: always;
     page-break-inside: avoid;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
     gap: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: 190mm !important;
+    box-sizing: border-box !important;
   }
 
   .chart-item {
@@ -2099,10 +2193,11 @@ h1 {
     background: transparent !important;
     border-radius: 0 !important;
     padding: 0 !important;
-    margin: 0 0 3mm 0 !important;
-    height: 75mm !important;
+    margin: 0 0 8mm 0 !important;
+    height: 80mm !important;
     overflow: visible !important;
     box-sizing: border-box !important;
+    flex-shrink: 0 !important;
   }
 
   .chart-item:last-child {

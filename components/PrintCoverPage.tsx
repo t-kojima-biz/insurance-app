@@ -14,28 +14,37 @@ const PrintCoverPage: React.FC<PrintCoverPageProps> = ({ customerName, agency })
 
   return (
     <div className="print-only cover-page">
-      <div className="cover-title-container">
-        <div className="customer-name-display">
-          {customerName} 様
+      <div className="cover-accent-bar" />
+
+      <div className="cover-top">
+        <div className="cover-customer">
+          <span className="cover-customer-label">お客様</span>
+          <span className="cover-customer-name">{customerName}</span>
+          <span className="cover-sama">様</span>
         </div>
-        <div className="logo-container">
-          <img src="/njpw_logo.webp" alt="Company Logo" className="agency-logo" />
+      </div>
+
+      <div className="cover-center">
+        <div className="cover-title-main">保険証券分析表</div>
+        <div className="cover-title-sub">Insurance Policy Analysis Report</div>
+      </div>
+
+      <div className="cover-bottom">
+        <div className="cover-bottom-left">
+          <div className="cover-date">{dateStr} 作成</div>
         </div>
-      </div>
-
-      <div className="creation-date-row">
-        作成日： {dateStr}
-      </div>
-
-      <div className="main-title">
-        保険証券分析表
-      </div>
-
-      <div className="agent-info">
-        <div className="agent-box">
-          <p>【保険代理店】 {agency.name}</p>
-          <p>取扱者： {agency.representative}</p>
-          <p>連絡先： {agency.phone}</p>
+        <div className="cover-bottom-right">
+          <div className="logo-container">
+            <img src="/njpw_logo.webp" alt="Company Logo" className="agency-logo" />
+          </div>
+          <div className="cover-agent">
+            <div className="cover-agent-name">{agency.name}</div>
+            <div className="cover-agent-detail">
+              <span>取扱者：{agency.representative}</span>
+              <span className="cover-agent-divider" />
+              <span>TEL：{agency.phone}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

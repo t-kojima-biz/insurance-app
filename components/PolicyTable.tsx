@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Policy, FamilyMember } from '@/types';
-import { Edit2, GripVertical, Trash } from 'lucide-react';
+import { Edit2, GripVertical, Trash, Search, X } from 'lucide-react';
 
 type DropPosition = 'before' | 'after';
 
@@ -18,6 +18,7 @@ interface PolicyTableProps {
 const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDelete, onEdit, onAddNew, onReorder }) => {
   const [draggedPolicyId, setDraggedPolicyId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: DropPosition } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const getMemberName = (id: string) => {
     const member = familyMembers.find(m => m.id === id);
@@ -37,6 +38,18 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
   const totalHospDay = policies.reduce((sum, p) => sum + p.hospDayDisease, 0);
 
   const freqLabel = (f: string) => f === 'monthly' ? '月払' : f === 'annual' ? '年払' : '一時払';
+
+  const filteredPolicies = useMemo(() => {
+    if (!searchQuery.trim()) return policies;
+    const q = searchQuery.trim().toLowerCase();
+    return policies.filter(p =>
+      p.companyName.toLowerCase().includes(q) ||
+      p.policyType.toLowerCase().includes(q) ||
+      (p.policyNumber && p.policyNumber.toLowerCase().includes(q)) ||
+      getMemberName(p.insuredId).toLowerCase().includes(q) ||
+      getMemberName(p.beneficiaryId).toLowerCase().includes(q)
+    );
+  }, [policies, searchQuery, familyMembers]);
 
   const handleDragStart = (event: React.DragEvent<HTMLButtonElement>, policyId: string) => {
     event.dataTransfer.effectAllowed = 'move';
@@ -83,7 +96,25 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
     <div className="table-container">
       <div className="table-header-row">
         <h3>証券一覧</h3>
-        <button onClick={onAddNew} className="add-button no-print">+ 新しい保険証券を登録</button>
+        <div className="table-header-actions no-print">
+          {policies.length > 3 && (
+            <div className="policy-search">
+              <Search size={14} />
+              <input
+                type="text"
+                placeholder="会社名・種類・番号で検索..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="policy-search-clear" onClick={() => setSearchQuery('')}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          )}
+          <button onClick={onAddNew} className="add-button">+ 新しい保険証券を登録</button>
+        </div>
       </div>
       <table className="policy-table">
         <thead>
@@ -101,7 +132,9 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
           </tr>
         </thead>
         <tbody>
-          {policies.map((policy, index) => (
+          {filteredPolicies.map((policy) => {
+            const originalIndex = policies.indexOf(policy);
+            return (
             <tr
               key={policy.id}
               className={[
@@ -115,7 +148,7 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
               }}
               onDrop={(event) => handleDrop(event, policy.id)}
             >
-              <td className="order-cell">{index + 1}</td>
+              <td className="order-cell">{originalIndex + 1}</td>
               <td className="drag-cell no-print">
                 <button
                   type="button"
@@ -141,7 +174,8 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
                 <button onClick={() => onDelete(policy.id)} className="delete-icon-btn" title="削除"><Trash size={16} /></button>
               </td>
             </tr>
-          ))}
+          );
+          })}
         </tbody>
         <tfoot>
           <tr className="total-row">

@@ -113,8 +113,33 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyM
     }
   }, [editingPolicy]);
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.companyName?.trim()) errors.companyName = '保険会社は必須です';
+    if (!formData.contractDate) {
+      errors.contractDate = '契約日は必須です';
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.contractDate)) {
+      errors.contractDate = 'YYYY-MM-DD形式で入力してください';
+    }
+    if (!formData.insuredId) errors.insuredId = '被保険者を選択してください';
+    if (formData.policyEndAge !== undefined && (formData.policyEndAge < 1 || (formData.policyEndAge > 120 && formData.policyEndAge !== 999))) {
+      errors.policyEndAge = '1〜120歳 または 999(終身) を入力してください';
+    }
+    if (formData.paymentEndAge !== undefined && formData.paymentEndAge < 1) {
+      errors.paymentEndAge = '1歳以上を入力してください';
+    }
+    if ((formData.premiumAmount ?? 0) < 0) errors.premiumAmount = '保険料は0以上で入力してください';
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     const annualMult = formData.paymentFrequency === 'monthly' ? 12 : formData.paymentFrequency === 'annual' ? 1 : 0;
     const policyData: Policy = {
       ...formData,
@@ -155,7 +180,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyM
         <form onSubmit={handleSubmit} className="grid-form">
           <section>
             <h4>基本情報</h4>
-            <div className="form-group"><label>保険会社</label><input type="text" required value={formData.companyName} onChange={e => setField('companyName', e.target.value)} /></div>
+            <div className={`form-group ${formErrors.companyName ? 'has-error' : ''}`}><label>保険会社 <span className="required-mark">*</span></label><input type="text" required value={formData.companyName} onChange={e => setField('companyName', e.target.value)} />{formErrors.companyName && <span className="field-error">{formErrors.companyName}</span>}</div>
             <div className="form-group"><label>証券番号</label><input type="text" value={formData.policyNumber} onChange={e => setField('policyNumber', e.target.value)} placeholder="例: 2709300566" /></div>
             <div className="form-group">
               <label>保険種類</label>
@@ -180,7 +205,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyM
                 {familyMembers.map(m => <option key={m.id} value={m.id}>{m.relationship}: {m.name}</option>)}
               </select>
             </div>
-            <div className="form-group"><label>契約日</label><input type="date" value={formData.contractDate} onChange={e => setField('contractDate', e.target.value)} /></div>
+            <div className={`form-group ${formErrors.contractDate ? 'has-error' : ''}`}><label>契約日 <span className="required-mark">*</span></label><input type="date" value={formData.contractDate} onChange={e => setField('contractDate', e.target.value)} />{formErrors.contractDate && <span className="field-error">{formErrors.contractDate}</span>}</div>
           </section>
 
           <section>
@@ -190,7 +215,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyM
             <CommaInput label="入院日額（疾病）(円)" value={formData.hospDayDisease || 0} onChange={v => setField('hospDayDisease', v)} />
             <CommaInput label="入院日額（災害）(円)" value={formData.hospDayAccident || 0} onChange={v => setField('hospDayAccident', v)} />
             <CommaInput label="診断一時金 (円)" value={formData.diagnosisBenefit || 0} onChange={v => setField('diagnosisBenefit', v)} />
-            <div className="form-group"><label>保険期間（歳/999=終身）</label><input type="number" value={formData.policyEndAge} onChange={e => setField('policyEndAge', Number(e.target.value))} /></div>
+            <div className={`form-group ${formErrors.policyEndAge ? 'has-error' : ''}`}><label>保険期間（歳/999=終身）<span className="required-mark">*</span></label><input type="number" value={formData.policyEndAge} onChange={e => setField('policyEndAge', Number(e.target.value))} />{formErrors.policyEndAge && <span className="field-error">{formErrors.policyEndAge}</span>}</div>
           </section>
 
           <section>
@@ -204,7 +229,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, familyM
               </select>
             </div>
             <CommaInput label="保険料（1回あたり）(円)" value={formData.premiumAmount || 0} onChange={v => setField('premiumAmount', v)} />
-            <div className="form-group"><label>払込終了年齢（歳）</label><input type="number" value={formData.paymentEndAge} onChange={e => setField('paymentEndAge', Number(e.target.value))} /></div>
+            <div className={`form-group ${formErrors.paymentEndAge ? 'has-error' : ''}`}><label>払込終了年齢（歳）<span className="required-mark">*</span></label><input type="number" value={formData.paymentEndAge} onChange={e => setField('paymentEndAge', Number(e.target.value))} />{formErrors.paymentEndAge && <span className="field-error">{formErrors.paymentEndAge}</span>}</div>
             <CommaInput label="満期保険金 (円)" value={formData.maturityBenefit || 0} onChange={v => setField('maturityBenefit', v)} />
             {isPension && (
               <>

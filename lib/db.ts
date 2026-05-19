@@ -14,6 +14,13 @@ const DATABASE_PATH = process.env.DATABASE_PATH
 
 let db: Database.Database | null = null;
 
+export function closeDb(): void {
+  if (db) {
+    db.close();
+    db = null;
+  }
+}
+
 export function getDb(): Database.Database {
   if (db) return db;
 

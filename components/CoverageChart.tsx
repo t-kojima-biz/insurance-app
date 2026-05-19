@@ -8,9 +8,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   Legend,
 } from 'recharts';
+import ChartContainer from './ChartContainer';
 import type { Policy } from '@/types';
 
 interface CoverageChartProps {
@@ -46,42 +46,46 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
   const colors = ['#a5b4fc', '#86efac', '#fde68a', '#fdba74'];
 
   return (
-    <div style={{ width: '100%', height: 350, marginTop: '20px' }}>
+    <div style={{ width: '100%', marginTop: '20px' }}>
       <h3>死亡保障推移（積み上げグラフ）</h3>
-      <ResponsiveContainer>
-        <AreaChart
-          data={data}
-          margin={{ top: 5, right: 30, left: 40, bottom: 20 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="age" />
-          <YAxis
-            label={{ value: '保障額 (万円)', angle: -90, position: 'insideLeft', offset: -30 }}
-            tickFormatter={formatAxisTick}
-            width={80}
-          />
-          <Tooltip
-            formatter={(value: any) => [`${formatAxisTick(value)}万円`, '']}
-          />
-          <Legend
-            verticalAlign="top"
-            wrapperStyle={{ paddingBottom: '5px', fontWeight: 'bold', fontSize: '12px' }}
-          />
-          {policies.map((policy, index) => (
-            policy.deathBenefitDisease > 0 && (
-              <Area
-                key={policy.id}
-                type="monotone"
-                dataKey={policy.id}
-                name={`${policy.companyName} / ${policy.policyType}`}
-                stackId="1"
-                stroke={colors[index % colors.length]}
-                fill={colors[index % colors.length]}
-              />
-            )
-          ))}
-        </AreaChart>
-      </ResponsiveContainer>
+      <ChartContainer height={300}>
+        {(width, height) => (
+          <AreaChart
+            width={width}
+            height={height}
+            data={data}
+            margin={{ top: 5, right: 30, left: 40, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="age" />
+            <YAxis
+              label={{ value: '保障額 (万円)', angle: -90, position: 'insideLeft', offset: -30 }}
+              tickFormatter={formatAxisTick}
+              width={80}
+            />
+            <Tooltip
+              formatter={(value: any) => [`${formatAxisTick(value)}万円`, '']}
+            />
+            <Legend
+              verticalAlign="top"
+              wrapperStyle={{ paddingBottom: '5px', fontWeight: 'bold', fontSize: '12px' }}
+            />
+            {policies.map((policy, index) => (
+              policy.deathBenefitDisease > 0 && (
+                <Area
+                  key={policy.id}
+                  type="monotone"
+                  dataKey={policy.id}
+                  name={`${policy.companyName} / ${policy.policyType}`}
+                  stackId="1"
+                  stroke={colors[index % colors.length]}
+                  fill={colors[index % colors.length]}
+                />
+              )
+            ))}
+          </AreaChart>
+        )}
+      </ChartContainer>
     </div>
   );
 };

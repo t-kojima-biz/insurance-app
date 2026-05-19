@@ -11,10 +11,11 @@ import PrintCoverPage from '@/components/PrintCoverPage';
 import CustomerModal from '@/components/CustomerModal';
 import CsvImportDialog from '@/components/CsvImportDialog';
 import CaseListPage from '@/components/CaseListPage';
+import ToastContainer, { type ToastMessage } from '@/components/Toast';
 import type { Policy, FamilyMember, Agency, AppState } from '@/types';
-import { fetchAppState, saveAppState as apiSave, resetAppState, clearAppState, getExportUrl } from '@/lib/api';
+import { fetchAppState, saveAppState as apiSave, resetAppState, clearAppState, getExportUrl, getBackupUrl, restoreBackup } from '@/lib/api';
 
-import { Printer, Trash2, FileJson, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Printer, Trash2, FileJson, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft, DatabaseBackup, FileCog, FileDown } from 'lucide-react';
 
 const VALID_POLICY_TYPES = ['個人年金保険', '収入保障保険', '変額終身保険', '医療保険', '終身保険', '養老保険'] as const;
 const VALID_FREQUENCIES = ['monthly', 'annual', 'single'] as const;
@@ -56,9 +57,19 @@ export default function Page() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
+
+  const addToast = useCallback((type: ToastMessage['type'], text: string) => {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    setToasts(prev => [...prev, { id, type, text }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
 
   const applyState = useCallback((state: AppState) => {
     setFamilyMembers(state.familyMembers);
@@ -74,7 +85,7 @@ export default function Page() {
       const state = await fetchAppState(caseId);
       applyState(state);
     } catch {
-      setError('データの読み込みに失敗しました');
+      addToast('error', 'データの読み込みに失敗しました');
     }
     setIsLoading(false);
   }, [applyState]);
@@ -102,7 +113,7 @@ export default function Page() {
       const state = await resetAppState(activeCaseId);
       applyState(state);
     } catch {
-      setError('サンプル読込に失敗しました');
+      addToast('error', 'サンプル読込に失敗しました');
     }
     setIsLoading(false);
   };
@@ -128,11 +139,26 @@ export default function Page() {
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2500);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const handleBackup = () => {
+    window.open(getBackupUrl(), '_blank');
+    addToast('success', 'バックアップをダウンロードしています');
+  };
+
+  const handleRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    if (!window.confirm('バックアップから復元しますか？現在のデータはすべて上書きされます。')) return;
+
+    try {
+      await restoreBackup(file);
+      addToast('success', '復元しました。ページをリロードします...');
+      setTimeout(() => window.location.reload(), 1500);
+    } catch {
+      addToast('error', '復元に失敗しました。有効なバックアップファイルか確認してください。');
+    }
+  };
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -207,7 +233,7 @@ export default function Page() {
       const state = await clearAppState(activeCaseId);
       applyState(state);
     } catch {
-      setError('データ消去に失敗しました');
+      addToast('error', 'データ消去に失敗しました');
     }
     setIsLoading(false);
   };
@@ -216,7 +242,7 @@ export default function Page() {
     if (!activeCaseId) return;
     const validationError = validateBeforeSave(familyMembers, policies, agency);
     if (validationError) {
-      setError(validationError);
+      addToast('warning', validationError);
       return;
     }
     setIsSaving(true);
@@ -224,9 +250,9 @@ export default function Page() {
     try {
       const state = await apiSave(activeCaseId, { familyMembers, policies, agency });
       applyState(state);
-      setToast('保存しました');
+      addToast('success', '保存しました');
     } catch {
-      setError('保存に失敗しました');
+      addToast('error', '保存に失敗しました');
     }
     setIsSaving(false);
   };
@@ -283,7 +309,15 @@ export default function Page() {
         </div>
       )}
 
-      {toast && <div className="toast">{toast}</div>}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      <input
+        ref={restoreInputRef}
+        type="file"
+        accept=".sqlite,.db"
+        style={{ display: 'none' }}
+        onChange={handleRestore}
+      />
 
       <header className="app-header">
         <div>
@@ -316,6 +350,13 @@ export default function Page() {
                   <Download size={16} /> JSON出力
                 </button>
                 <hr />
+                <button onClick={() => { setMenuOpen(false); handleBackup(); }}>
+                  <DatabaseBackup size={16} /> バックアップ
+                </button>
+                <button onClick={() => { setMenuOpen(false); restoreInputRef.current?.click(); }}>
+                  <FileCog size={16} /> 復元
+                </button>
+                <hr />
                 <button className="dropdown-danger" onClick={() => { setMenuOpen(false); handleClear(); }}>
                   <Trash2 size={16} /> データ消去
                 </button>
@@ -326,7 +367,7 @@ export default function Page() {
             <Save size={18} /> {isSaving ? '保存中...' : '保存'}
           </button>
           <button onClick={handlePrint} className="print-button">
-            <Printer size={18} /> 診断結果を印刷
+            <Printer size={18} /> <span>印刷 / PDF保存</span>
           </button>
         </div>
       </header>

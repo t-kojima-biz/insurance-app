@@ -163,3 +163,16 @@ export function savePortfolioInsights(caseId: string, insights: Omit<PortfolioIn
 export function resetPortfolioInsights(caseId: string): Promise<{ ok: boolean }> {
   return request(`/api/portfolio-insights${qs(caseId)}`, { method: 'DELETE' });
 }
+
+export function getBackupUrl(): string {
+  return '/api/backup';
+}
+
+export async function restoreBackup(file: File): Promise<{ ok: boolean; message: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/backup', { method: 'POST', body: form });
+  const body = await res.json();
+  if (!res.ok) throw new ApiError(res.status, body.errors);
+  return body;
+}

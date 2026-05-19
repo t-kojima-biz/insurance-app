@@ -8,8 +8,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
+import ChartContainer from './ChartContainer';
 import type { Policy } from '@/types';
 
 interface CostChartProps {
@@ -33,17 +33,19 @@ const CostChart: React.FC<CostChartProps> = ({ policies, currentAge }) => {
   }
 
   return (
-    <div style={{ width: '100%', height: 350, marginTop: '40px' }}>
+    <div style={{ width: '100%', marginTop: '40px' }}>
       <h3>将来の保険料負担推移（月額合計）</h3>
-      <ResponsiveContainer>
-        <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="age" />
-          <YAxis tickFormatter={formatAxisTick} width={80} />
-          <Tooltip formatter={(value: any) => [`${formatAxisTick(value)}円`, '合計保険料']} />
-          <Bar dataKey="cost" fill="#f6ad55" />
-        </BarChart>
-      </ResponsiveContainer>
+      <ChartContainer height={300}>
+        {(width, height) => (
+          <BarChart width={width} height={height} data={data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="age" />
+            <YAxis tickFormatter={formatAxisTick} width={80} />
+            <Tooltip formatter={(value: any) => [`${formatAxisTick(value)}円`, '合計保険料']} />
+            <Bar dataKey="cost" fill="#f6ad55" />
+          </BarChart>
+        )}
+      </ChartContainer>
     </div>
   );
 };

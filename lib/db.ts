@@ -2,9 +2,15 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
+const isServerless = process.env.VERCEL || process.env.LAMBDA_TASK_ROOT || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+const DEFAULT_DB_PATH = isServerless 
+  ? resolve('/tmp', 'insurance.sqlite')
+  : resolve(process.cwd(), 'data', 'insurance.sqlite');
+
 const DATABASE_PATH = process.env.DATABASE_PATH 
   ? resolve(process.env.DATABASE_PATH)
-  : resolve(process.cwd(), 'data', 'insurance.sqlite');
+  : DEFAULT_DB_PATH;
 
 let db: Database.Database | null = null;
 

@@ -22,7 +22,7 @@ const formatAxisTick = (value: number | string) =>
   Number(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
 
 const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) => {
-  const data = [];
+  const data: Record<string, number>[] = [];
   for (let age = currentAge; age <= 90; age++) {
     const dataPoint: any = { age };
     policies.forEach((policy) => {

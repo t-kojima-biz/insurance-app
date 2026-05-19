@@ -21,7 +21,7 @@ const formatAxisTick = (value: number | string) =>
   Number(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
 
 const CostChart: React.FC<CostChartProps> = ({ policies, currentAge }) => {
-  const data = [];
+  const data: { age: number; cost: number }[] = [];
   for (let age = currentAge; age <= 80; age++) {
     let totalCost = 0;
     policies.forEach((policy) => {

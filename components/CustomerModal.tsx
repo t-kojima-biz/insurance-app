@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { FamilyMember, Agency, AgencyMaster } from '@/types';
 import { fetchAgencyMasters } from '@/lib/api';
 import { User, X, Plus, Trash2, Building2, Download } from 'lucide-react';
@@ -22,6 +22,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
   const [tempMembers, setTempMembers] = useState<FamilyMember[]>(familyMembers);
   const [tempAgency, setTempAgency] = useState<Agency>(agency);
   const [agencyMasters, setAgencyMasters] = useState<AgencyMaster[]>([]);
+  const composingRef = useRef(false);
 
   useEffect(() => {
     fetchAgencyMasters().then(setAgencyMasters).catch(() => {});
@@ -45,7 +46,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
   };
 
   const updateMember = (id: string, field: keyof FamilyMember, value: string) => {
-    const finalValue = field === 'nameKana' ? toKatakana(value) : value;
+    const finalValue = (field === 'nameKana' && !composingRef.current) ? toKatakana(value) : value;
     setTempMembers(tempMembers.map(m => m.id === id ? { ...m, [field]: finalValue } : m));
   };
 
@@ -87,6 +88,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
                 </div>
                 <div className="form-group"><label>フリガナ</label>
                   <input type="text" value={member.nameKana} placeholder="カタカナ"
+                    onCompositionStart={() => { composingRef.current = true; }}
+                    onCompositionEnd={e => { composingRef.current = false; updateMember(member.id, 'nameKana', e.currentTarget.value); }}
                     onChange={e => updateMember(member.id, 'nameKana', e.target.value)} />
                 </div>
                 <div className="form-group"><label>生年月日</label>

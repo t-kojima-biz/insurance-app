@@ -33,6 +33,8 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
   const totalAnnual = policies.reduce((sum, p) => sum + getAnnualPremium(p), 0);
   const monthlyTotal = policies.filter(p => p.paymentFrequency === 'monthly').reduce((sum, p) => sum + p.premiumAmount, 0);
   const annualTotal = policies.filter(p => p.paymentFrequency === 'annual').reduce((sum, p) => sum + p.premiumAmount, 0);
+  const totalDeathBenefit = policies.reduce((sum, p) => sum + p.deathBenefitDisease, 0);
+  const totalHospDay = policies.reduce((sum, p) => sum + p.hospDayDisease, 0);
 
   const freqLabel = (f: string) => f === 'monthly' ? '月払' : f === 'annual' ? '年払' : '一時払';
 
@@ -142,25 +144,32 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
           ))}
         </tbody>
         <tfoot>
-          {monthlyTotal > 0 && (
-            <tr className="total-row">
-              <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700 }}>月払計</td>
-              <td style={{ fontWeight: 700 }}>{monthlyTotal.toLocaleString()}円/月</td>
-              <td></td>
-            </tr>
-          )}
+          <tr className="total-row">
+            <td className="order-cell"></td>
+            <td className="drag-cell"></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td style={{ fontWeight: 700 }}>{totalDeathBenefit > 0 ? `${(totalDeathBenefit / 10000).toLocaleString()}万円` : '-'}</td>
+            <td style={{ fontWeight: 700 }}>{totalHospDay > 0 ? `${totalHospDay.toLocaleString()}円` : '-'}</td>
+            <td></td>
+            <td style={{ fontWeight: 700 }}>{monthlyTotal > 0 ? `${monthlyTotal.toLocaleString()}円/月` : ''}</td>
+            <td className="actions-cell"></td>
+          </tr>
           {annualTotal > 0 && (
             <tr className="total-row">
-              <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700 }}>年払計</td>
-              <td style={{ fontWeight: 700 }}>{annualTotal.toLocaleString()}円/年</td>
+              <td className="order-cell"></td>
+              <td className="drag-cell"></td>
               <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td style={{ textAlign: 'right', fontWeight: 700 }}>年払計</td>
+              <td style={{ fontWeight: 700 }}>{annualTotal.toLocaleString()}円/年</td>
+              <td className="actions-cell"></td>
             </tr>
           )}
-          <tr className="total-row grand-total-row">
-            <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700 }}>年間合計</td>
-            <td style={{ fontWeight: 700 }}>{totalAnnual.toLocaleString()}円</td>
-            <td></td>
-          </tr>
         </tfoot>
       </table>
     </div>

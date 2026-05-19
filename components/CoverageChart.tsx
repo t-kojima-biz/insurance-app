@@ -21,23 +21,11 @@ interface CoverageChartProps {
 const formatAxisTick = (value: number | string) =>
   Number(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
 
-const isDecreasing = (policy: Policy) => {
-  if (policy.policyType === '収入保障保険') return true;
-  if (policy.policyEndAge !== 999) return true;
-  return false;
-};
-
 const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) => {
-  const sortedPolicies = [...policies].sort((a, b) => {
-    const aDec = isDecreasing(a) ? 1 : 0;
-    const bDec = isDecreasing(b) ? 1 : 0;
-    return aDec - bDec;
-  });
-
   const data = [];
   for (let age = currentAge; age <= 90; age++) {
     const dataPoint: any = { age };
-    sortedPolicies.forEach((policy) => {
+    policies.forEach((policy) => {
       if (age < policy.policyEndAge || policy.policyEndAge === 999) {
         let amount = policy.deathBenefitDisease;
 
@@ -79,7 +67,7 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
             verticalAlign="top"
             wrapperStyle={{ paddingBottom: '5px', fontWeight: 'bold', fontSize: '12px' }}
           />
-          {sortedPolicies.map((policy, index) => (
+          {policies.map((policy, index) => (
             policy.deathBenefitDisease > 0 && (
               <Area
                 key={policy.id}

@@ -205,6 +205,10 @@ export function importCsv(
     const row = records[i] as CsvRow;
     const rowNum = i + 2;
 
+    if (row.companyName?.startsWith('※') || row.policyType?.startsWith('※')) {
+      continue;
+    }
+
     if (!row.companyName?.trim()) {
       errors.push({ row: rowNum, message: '保険会社は必須です' });
       continue;

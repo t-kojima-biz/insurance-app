@@ -5,18 +5,19 @@ import InsuranceTypeOverview from '@/components/InsuranceTypeOverview';
 import PolicyAnalysisCard from '@/components/PolicyAnalysisCard';
 
 interface PolicyAnalysisSectionProps {
+  caseId: string;
   policies: Policy[];
   currentAge: number;
   familyMembers: FamilyMember[];
   onUpdateNote: (policyId: string, note: string) => void;
 }
 
-const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ policies, currentAge, familyMembers, onUpdateNote }) => {
+const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ caseId, policies, currentAge, familyMembers, onUpdateNote }) => {
   if (policies.length === 0) return null;
 
   return (
     <div className="analysis-section">
-      <InsuranceTypeOverview policies={policies} currentAge={currentAge} />
+      <InsuranceTypeOverview caseId={caseId} policies={policies} currentAge={currentAge} />
 
       <div className="individual-analysis">
         <h3 className="analysis-section-title">
@@ -26,13 +27,14 @@ const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ policies,
 
         <div className="analysis-cards-list">
           {policies.map((policy) => (
-            <PolicyAnalysisCard
-              key={policy.id}
-              policy={policy}
-              currentAge={currentAge}
-              familyMembers={familyMembers}
-              onUpdateNote={onUpdateNote}
-            />
+            <div key={policy.id} className="analysis-card-page">
+              <PolicyAnalysisCard
+                policy={policy}
+                currentAge={currentAge}
+                familyMembers={familyMembers}
+                onUpdateNote={onUpdateNote}
+              />
+            </div>
           ))}
         </div>
       </div>

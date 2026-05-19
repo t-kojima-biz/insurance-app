@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Pencil,
   Check,
+  X,
 } from 'lucide-react';
 import {
   INSURANCE_TYPE_INFO,
@@ -26,6 +27,15 @@ import {
   getCurrentDeathBenefit,
   type PortfolioInsight,
 } from '@/utils/analysisUtils';
+import {
+  fetchInsuranceTypeDescriptions,
+  updateInsuranceTypeDescription,
+  type InsuranceTypeDescription,
+  fetchPortfolioInsights,
+  savePortfolioInsights,
+  resetPortfolioInsights,
+  type PortfolioInsightData,
+} from '@/lib/api';
 
 interface EditableInsight extends PortfolioInsight {
   id: string;
@@ -33,6 +43,7 @@ interface EditableInsight extends PortfolioInsight {
 }
 
 interface InsuranceTypeOverviewProps {
+  caseId: string;
   policies: Policy[];
   currentAge: number;
 }
@@ -62,7 +73,7 @@ const insightTypeLabels: Record<PortfolioInsight['type'], string> = {
 let nextId = 1;
 const genId = () => `insight-${nextId++}`;
 
-const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies, currentAge }) => {
+const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ caseId, policies, currentAge }) => {
   const grouped = policies.reduce<Record<PolicyType, Policy[]>>((acc, p) => {
     if (!acc[p.policyType]) acc[p.policyType] = [];
     acc[p.policyType].push(p);
@@ -73,20 +84,77 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
-  const prevPoliciesRef = useRef<string>('');
+  const insightsLoadedRef = useRef(false);
+
+  const [descriptions, setDescriptions] = useState<Map<string, InsuranceTypeDescription>>(new Map());
+  const [editingType, setEditingType] = useState<PolicyType | null>(null);
+  const [editDesc, setEditDesc] = useState({ longDescription: '', purpose: '' });
+  const [savingType, setSavingType] = useState(false);
 
   useEffect(() => {
-    const key = JSON.stringify(policies.map(p => p.id).sort());
-    if (key !== prevPoliciesRef.current) {
-      prevPoliciesRef.current = key;
-      const auto = analyzePortfolio(policies, currentAge);
-      const customItems = editableInsights.filter(i => i.isCustom);
-      setEditableInsights([
-        ...auto.map(a => ({ ...a, id: genId() })),
-        ...customItems,
-      ]);
+    fetchInsuranceTypeDescriptions().then(list => {
+      setDescriptions(new Map(list.map(d => [d.policyType, d])));
+    }).catch(() => {});
+  }, []);
+
+  const getDescription = (type: PolicyType) => {
+    const saved = descriptions.get(type);
+    return {
+      longDescription: saved?.longDescription ?? INSURANCE_TYPE_INFO[type].longDescription,
+      purpose: saved?.purpose ?? INSURANCE_TYPE_INFO[type].purpose,
+    };
+  };
+
+  const handleStartEditType = (type: PolicyType) => {
+    const desc = getDescription(type);
+    setEditingType(type);
+    setEditDesc({ longDescription: desc.longDescription, purpose: desc.purpose });
+  };
+
+  const handleSaveType = async () => {
+    if (!editingType) return;
+    setSavingType(true);
+    try {
+      const result = await updateInsuranceTypeDescription(editingType, editDesc.longDescription, editDesc.purpose);
+      setDescriptions(prev => new Map(prev).set(editingType, result));
+      setEditingType(null);
+    } catch {
+    } finally {
+      setSavingType(false);
     }
-  }, [policies, currentAge]);
+  };
+
+  const persistInsights = (insights: EditableInsight[]) => {
+    savePortfolioInsights(caseId, insights.map(i => ({
+      type: i.type,
+      text: i.text,
+      isCustom: !!i.isCustom,
+    }))).catch(() => {});
+  };
+
+  useEffect(() => {
+    insightsLoadedRef.current = false;
+    fetchPortfolioInsights(caseId).then(({ insights, hasData }) => {
+      if (hasData && insights.length > 0) {
+        setEditableInsights(insights.map(i => ({
+          id: i.id || genId(),
+          type: i.type,
+          text: i.text,
+          isCustom: i.isCustom,
+        })));
+      } else {
+        const auto = analyzePortfolio(policies, currentAge);
+        const mapped = auto.map(a => ({ ...a, id: genId(), isCustom: false }));
+        setEditableInsights(mapped);
+        if (policies.length > 0) persistInsights(mapped);
+      }
+      insightsLoadedRef.current = true;
+    }).catch(() => {
+      const auto = analyzePortfolio(policies, currentAge);
+      setEditableInsights(auto.map(a => ({ ...a, id: genId(), isCustom: false })));
+      insightsLoadedRef.current = true;
+    });
+  }, [caseId]);
 
   useEffect(() => {
     if (editingId && editInputRef.current) {
@@ -95,7 +163,11 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
   }, [editingId]);
 
   const handleDelete = (id: string) => {
-    setEditableInsights(prev => prev.filter(i => i.id !== id));
+    setEditableInsights(prev => {
+      const next = prev.filter(i => i.id !== id);
+      persistInsights(next);
+      return next;
+    });
   };
 
   const handleStartEdit = (insight: EditableInsight) => {
@@ -105,7 +177,11 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
 
   const handleSaveEdit = (id: string) => {
     if (editText.trim()) {
-      setEditableInsights(prev => prev.map(i => i.id === id ? { ...i, text: editText.trim() } : i));
+      setEditableInsights(prev => {
+        const next = prev.map(i => i.id === id ? { ...i, text: editText.trim() } : i);
+        persistInsights(next);
+        return next;
+      });
     }
     setEditingId(null);
     setEditText('');
@@ -123,9 +199,12 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
     setEditText('');
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    await resetPortfolioInsights(caseId).catch(() => {});
     const auto = analyzePortfolio(policies, currentAge);
-    setEditableInsights(auto.map(a => ({ ...a, id: genId() })));
+    const mapped = auto.map(a => ({ ...a, id: genId(), isCustom: false }));
+    setEditableInsights(mapped);
+    persistInsights(mapped);
     setEditingId(null);
   };
 
@@ -143,6 +222,8 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
           const totalMonthly = typePolicies.reduce((sum, p) => sum + getMonthlyPremium(p), 0);
           const totalDeathBenefit = typePolicies.reduce((sum, p) => sum + getCurrentDeathBenefit(p, currentAge), 0);
           const totalHosp = typePolicies.reduce((sum, p) => sum + p.hospDayDisease, 0);
+          const desc = getDescription(type);
+          const isEditingThis = editingType === type;
 
           return (
             <div key={type} className="type-overview-card" style={{ borderTopColor: info.borderColor }}>
@@ -151,17 +232,51 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
                   {Icon && <Icon size={20} />}
                   <span>{type}</span>
                 </div>
-                <span className="toc-count" style={{ background: info.bgColor, color: info.color }}>
-                  {typePolicies.length}件
-                </span>
+                <div className="toc-header-right">
+                  <span className="toc-count" style={{ background: info.bgColor, color: info.color }}>
+                    {typePolicies.length}件
+                  </span>
+                  {!isEditingThis && (
+                    <button className="toc-edit-btn no-print" onClick={() => handleStartEditType(type)} title="説明を編集">
+                      <Pencil size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <p className="toc-description">{info.longDescription}</p>
-
-              <div className="toc-purpose">
-                <span className="toc-purpose-label">目的</span>
-                <span>{info.purpose}</span>
-              </div>
+              {isEditingThis ? (
+                <div className="toc-edit-form">
+                  <label className="toc-edit-label">説明</label>
+                  <textarea
+                    className="toc-edit-textarea"
+                    value={editDesc.longDescription}
+                    onChange={e => setEditDesc(prev => ({ ...prev, longDescription: e.target.value }))}
+                    rows={3}
+                  />
+                  <label className="toc-edit-label">目的</label>
+                  <input
+                    className="toc-edit-input"
+                    value={editDesc.purpose}
+                    onChange={e => setEditDesc(prev => ({ ...prev, purpose: e.target.value }))}
+                  />
+                  <div className="toc-edit-actions">
+                    <button className="toc-edit-save" onClick={handleSaveType} disabled={savingType}>
+                      <Check size={14} /> {savingType ? '保存中...' : '保存'}
+                    </button>
+                    <button className="toc-edit-cancel" onClick={() => setEditingType(null)}>
+                      <X size={14} /> キャンセル
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="toc-description">{desc.longDescription}</p>
+                  <div className="toc-purpose">
+                    <span className="toc-purpose-label">目的</span>
+                    <span>{desc.purpose}</span>
+                  </div>
+                </>
+              )}
 
               <div className="toc-stats">
                 {totalDeathBenefit > 0 && (
@@ -214,7 +329,11 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ policies,
                       value={insight.type}
                       onChange={e => {
                         const newType = e.target.value as PortfolioInsight['type'];
-                        setEditableInsights(prev => prev.map(i => i.id === insight.id ? { ...i, type: newType } : i));
+                        setEditableInsights(prev => {
+                          const next = prev.map(i => i.id === insight.id ? { ...i, type: newType } : i);
+                          persistInsights(next);
+                          return next;
+                        });
                       }}
                     >
                       {Object.entries(insightTypeLabels).map(([k, v]) => (

@@ -353,6 +353,7 @@ export default function Page() {
         </div>
 
         <PolicyAnalysisSection
+          caseId={activeCaseId!}
           policies={policies}
           currentAge={currentAge}
           familyMembers={familyMembers}

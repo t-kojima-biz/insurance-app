@@ -118,3 +118,48 @@ export function updateAgencyMaster(id: string, data: Omit<AgencyMaster, 'id'>): 
 export function deleteAgencyMaster(id: string): Promise<{ ok: boolean }> {
   return request(`/api/agency-masters/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
+
+export interface InsuranceTypeDescription {
+  policyType: string;
+  longDescription: string;
+  purpose: string;
+}
+
+export function fetchInsuranceTypeDescriptions(): Promise<InsuranceTypeDescription[]> {
+  return request<InsuranceTypeDescription[]>('/api/insurance-type-descriptions');
+}
+
+export function updateInsuranceTypeDescription(
+  policyType: string,
+  longDescription: string,
+  purpose: string,
+): Promise<InsuranceTypeDescription> {
+  return request<InsuranceTypeDescription>('/api/insurance-type-descriptions', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ policyType, longDescription, purpose }),
+  });
+}
+
+export interface PortfolioInsightData {
+  id?: string;
+  type: 'gap' | 'redundancy' | 'recommendation';
+  text: string;
+  isCustom: boolean;
+}
+
+export function fetchPortfolioInsights(caseId: string): Promise<{ insights: PortfolioInsightData[]; hasData: boolean }> {
+  return request(`/api/portfolio-insights${qs(caseId)}`);
+}
+
+export function savePortfolioInsights(caseId: string, insights: Omit<PortfolioInsightData, 'id'>[]): Promise<{ insights: PortfolioInsightData[] }> {
+  return request(`/api/portfolio-insights${qs(caseId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ insights }),
+  });
+}
+
+export function resetPortfolioInsights(caseId: string): Promise<{ ok: boolean }> {
+  return request(`/api/portfolio-insights${qs(caseId)}`, { method: 'DELETE' });
+}

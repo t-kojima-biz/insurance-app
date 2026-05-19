@@ -22,6 +22,7 @@ const PrintCoverPage: React.FC<PrintCoverPageProps> = ({ customerName, agency })
           <span className="cover-customer-name">{customerName}</span>
           <span className="cover-sama">様</span>
         </div>
+        <div className="cover-date">{dateStr} 作成</div>
       </div>
 
       <div className="cover-center">
@@ -29,21 +30,16 @@ const PrintCoverPage: React.FC<PrintCoverPageProps> = ({ customerName, agency })
         <div className="cover-title-sub">Insurance Policy Analysis Report</div>
       </div>
 
-      <div className="cover-bottom">
-        <div className="cover-bottom-left">
-          <div className="cover-date">{dateStr} 作成</div>
+      <div className="cover-footer">
+        <div className="logo-container">
+          <img src="/njpw_logo.webp" alt="Company Logo" className="agency-logo" />
         </div>
-        <div className="cover-bottom-right">
-          <div className="logo-container">
-            <img src="/njpw_logo.webp" alt="Company Logo" className="agency-logo" />
-          </div>
-          <div className="cover-agent">
-            <div className="cover-agent-name">{agency.name}</div>
-            <div className="cover-agent-detail">
-              <span>取扱者：{agency.representative}</span>
-              <span className="cover-agent-divider" />
-              <span>TEL：{agency.phone}</span>
-            </div>
+        <div className="cover-agent">
+          <div className="cover-agent-name">{agency.name}</div>
+          <div className="cover-agent-detail">
+            <span>取扱者：{agency.representative}</span>
+            <span className="cover-agent-divider" />
+            <span>TEL：{agency.phone}</span>
           </div>
         </div>
       </div>

@@ -120,6 +120,28 @@ function runMigrations(db: Database.Database): void {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS insurance_type_descriptions (
+      policy_type TEXT PRIMARY KEY,
+      long_description TEXT NOT NULL,
+      purpose TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS portfolio_insights (
+      id TEXT PRIMARY KEY,
+      case_id TEXT NOT NULL,
+      type TEXT NOT NULL CHECK (type IN ('gap', 'redundancy', 'recommendation')),
+      text TEXT NOT NULL,
+      is_custom INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_portfolio_insights_case_id
+      ON portfolio_insights(case_id, sort_order);
+
     CREATE INDEX IF NOT EXISTS idx_family_members_case_id_sort_order
       ON family_members(case_id, sort_order);
 

@@ -1,22 +1,35 @@
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
-const DATABASE_PATH = process.env.DATABASE_PATH || './data/insurance.sqlite';
+const DATABASE_PATH = process.env.DATABASE_PATH 
+  ? resolve(process.env.DATABASE_PATH)
+  : resolve(process.cwd(), 'data', 'insurance.sqlite');
 
 let db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (db) return db;
 
-  mkdirSync(dirname(DATABASE_PATH), { recursive: true });
+  const dbDir = dirname(DATABASE_PATH);
+  try {
+    mkdirSync(dbDir, { recursive: true });
+  } catch (err) {
+    console.error(`Failed to create database directory: ${dbDir}`, err);
+    throw err;
+  }
 
-  db = new Database(DATABASE_PATH);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
+  try {
+    db = new Database(DATABASE_PATH);
+    db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
 
-  runMigrations(db);
-  return db;
+    runMigrations(db);
+    return db;
+  } catch (err) {
+    console.error(`Failed to open database at ${DATABASE_PATH}`, err);
+    throw err;
+  }
 }
 
 function runMigrations(db: Database.Database): void {

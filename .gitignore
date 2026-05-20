@@ -28,3 +28,6 @@ data/
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal
+
+# Playwright CLI
+.playwright-cli/

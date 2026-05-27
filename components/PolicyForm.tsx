@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Policy, PolicyType, FamilyMember } from '@/types';
 import { FileUp, Upload, X } from 'lucide-react';
+import { mergeRelationshipSuggestions } from '@/utils/relationshipOptions';
 
 interface PolicyFormProps {
   isOpen: boolean;
@@ -19,9 +20,40 @@ interface UnresolvedName {
   field: 'insured' | 'beneficiary';
   label: string;
   originalName: string;
+  mode: 'new' | 'existing' | 'skip';
+  selectedMemberId: string;
+  relationship: string;
+  birthDate: string;
+  gender: FamilyMember['gender'];
 }
 
 const formatComma = (n: number) => n ? n.toLocaleString() : '';
+
+const createUnresolvedName = (
+  field: UnresolvedName['field'],
+  label: string,
+  originalName: unknown,
+): UnresolvedName => ({
+  field,
+  label,
+  originalName: String(originalName || '').trim(),
+  mode: 'new',
+  selectedMemberId: '',
+  relationship: '',
+  birthDate: '',
+  gender: field === 'insured' ? 'male' : 'female',
+});
+
+const getUnresolvedNameError = (item: UnresolvedName): string => {
+  if (item.mode === 'new') {
+    if (!item.originalName.replace(/様$/, '').trim()) return '名前を確認してください。';
+    if (!item.relationship.trim()) return '続柄を入力してください。';
+  }
+  if (item.mode === 'existing' && !item.selectedMemberId) {
+    return '既存の家族を選択してください。';
+  }
+  return '';
+};
 
 const CommaInput: React.FC<{
   value: number;
@@ -97,12 +129,23 @@ const CommaInputRaw: React.FC<{
 
 const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, onAddFamilyMember, familyMembers, editingPolicy, onCancel }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previousOpenRef = useRef(false);
+  const previousEditingPolicyIdRef = useRef<string | null>(null);
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [pasteText, setPasteText] = useState('');
   
   // マッチング未解決の名前管理
   const [unresolvedNames, setUnresolvedNames] = useState<UnresolvedName[]>([]);
-  const [resolvingIndex, setResolvingIndex] = useState<number>(-1);
+  const [linkBeneficiaryToInsured, setLinkBeneficiaryToInsured] = useState(false);
+  const relationshipSuggestions = useMemo(
+    () => mergeRelationshipSuggestions(familyMembers.map(member => member.relationship)),
+    [familyMembers],
+  );
+  const unresolvedNameErrors = useMemo(
+    () => unresolvedNames.map(getUnresolvedNameError),
+    [unresolvedNames],
+  );
+  const hasUnresolvedNameErrors = unresolvedNameErrors.some(Boolean);
 
   const [formData, setFormData] = useState<Partial<Policy>>({
     companyName: '',
@@ -125,6 +168,16 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, onAddFa
   });
 
   useEffect(() => {
+    const wasOpen = previousOpenRef.current;
+    const previousEditingPolicyId = previousEditingPolicyIdRef.current;
+    const currentEditingPolicyId = editingPolicy?.id ?? null;
+    const shouldInitialize = isOpen && (!wasOpen || previousEditingPolicyId !== currentEditingPolicyId);
+
+    previousOpenRef.current = isOpen;
+    previousEditingPolicyIdRef.current = currentEditingPolicyId;
+
+    if (!shouldInitialize) return;
+
     if (editingPolicy) {
       setFormData(editingPolicy);
     } else {
@@ -151,7 +204,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, onAddFa
     setShowPasteArea(false);
     setPasteText('');
     setUnresolvedNames([]);
-    setResolvingIndex(-1);
+    setLinkBeneficiaryToInsured(false);
   }, [editingPolicy, familyMembers, isOpen]);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -291,63 +344,104 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, onAddFa
     const unresolved: UnresolvedName[] = [];
     
     if (!insuredId && json.insuredName) {
-      unresolved.push({ field: 'insured', label: '被保険者', originalName: json.insuredName });
+      unresolved.push(createUnresolvedName('insured', '被保険者', json.insuredName));
     }
 
     let beneficiaryId = json.beneficiaryId;
     const bName = String(json.beneficiaryName || '').trim();
-    if (bName.match(/^(本人|被保険者|同上|被保険者と同じ|左記に同じ)$/) || (insuredId && normalizeName(bName) === normalizeName(json.insuredName || ''))) {
+    const beneficiaryIsSameAsInsured = Boolean(bName && normalizeName(bName) === normalizeName(json.insuredName || ''));
+    const shouldLinkBeneficiaryToInsured = Boolean(
+      bName.match(/^(本人|被保険者|同上|被保険者と同じ|左記に同じ)$/) || beneficiaryIsSameAsInsured
+    );
+
+    if (shouldLinkBeneficiaryToInsured) {
       beneficiaryId = insuredId;
     } else {
       beneficiaryId = beneficiaryId || findMemberId(bName);
       if (!beneficiaryId && bName) {
-        unresolved.push({ field: 'beneficiary', label: '受取人', originalName: bName });
+        unresolved.push(createUnresolvedName('beneficiary', '受取人', bName));
       }
     }
 
     setFormData(prev => ({ ...prev, ...cleanData, insuredId: insuredId || prev.insuredId, beneficiaryId: beneficiaryId || prev.beneficiaryId }));
+    setLinkBeneficiaryToInsured(shouldLinkBeneficiaryToInsured);
 
     if (unresolved.length > 0) {
       setUnresolvedNames(unresolved);
-      setResolvingIndex(0);
+    } else {
+      setUnresolvedNames([]);
     }
   };
 
-  const resolveMatch = (id: string | 'new') => {
-    const current = unresolvedNames[resolvingIndex];
-    let finalId = id;
+  const updateUnresolvedName = (index: number, changes: Partial<UnresolvedName>) => {
+    setUnresolvedNames(prev => prev.map((item, i) => i === index ? { ...item, ...changes } : item));
+  };
 
-    if (id === 'new') {
-      const newId = Math.random().toString(36).substr(2, 9);
-      const newMember: FamilyMember = {
-        id: newId,
-        name: current.originalName.replace(/様$/, '').trim(),
-        nameKana: '',
-        relationship: current.field === 'insured' ? '本人' : '配偶者',
-        birthDate: '1980-01-01',
-        gender: 'male'
-      };
-      onAddFamilyMember?.(newMember);
-      finalId = newId;
+  const handleUnresolvedModeChange = (index: number, value: string) => {
+    if (value.startsWith('existing:')) {
+      updateUnresolvedName(index, {
+        mode: 'existing',
+        selectedMemberId: value.replace('existing:', ''),
+      });
+      return;
     }
 
-    if (current.field === 'insured') {
-      setFormData(prev => ({ ...prev, insuredId: finalId }));
-      // 受取人が「本人」系だった場合の連動
-      const bName = unresolvedNames.find(u => u.field === 'beneficiary')?.originalName || '';
-      if (bName.match(/^(本人|被保険者|同上|被保険者と同じ|左記に同じ)$/)) {
-        setFormData(prev => ({ ...prev, beneficiaryId: finalId }));
+    updateUnresolvedName(index, {
+      mode: value as UnresolvedName['mode'],
+      selectedMemberId: '',
+    });
+  };
+
+  const applyUnresolvedNames = () => {
+    if (hasUnresolvedNameErrors) return;
+
+    const resolvedIds: Partial<Record<UnresolvedName['field'], string>> = {};
+
+    for (const item of unresolvedNames) {
+      let finalId = '';
+
+      if (item.mode === 'existing') {
+        finalId = item.selectedMemberId;
+      } else if (item.mode === 'new') {
+        const name = item.originalName.replace(/様$/, '').trim();
+        const relationship = item.relationship.trim();
+
+        if (!name || !relationship) {
+          return;
+        }
+
+        const newMember: FamilyMember = {
+          id: uuidv4(),
+          name,
+          nameKana: '',
+          relationship,
+          birthDate: item.birthDate,
+          gender: item.gender,
+        };
+        onAddFamilyMember?.(newMember);
+        finalId = newMember.id;
       }
-    } else {
-      setFormData(prev => ({ ...prev, beneficiaryId: finalId }));
+
+      if (finalId) {
+        resolvedIds[item.field] = finalId;
+        if (item.field === 'insured' && linkBeneficiaryToInsured) {
+          resolvedIds.beneficiary = finalId;
+        }
+      }
     }
 
-    if (resolvingIndex < unresolvedNames.length - 1) {
-      setResolvingIndex(resolvingIndex + 1);
-    } else {
-      setUnresolvedNames([]);
-      setResolvingIndex(-1);
-    }
+    setFormData(prev => ({
+      ...prev,
+      insuredId: resolvedIds.insured || prev.insuredId,
+      beneficiaryId: resolvedIds.beneficiary || prev.beneficiaryId,
+    }));
+    setUnresolvedNames([]);
+    setLinkBeneficiaryToInsured(false);
+  };
+
+  const skipUnresolvedNames = () => {
+    setUnresolvedNames([]);
+    setLinkBeneficiaryToInsured(false);
   };
 
   const handleJsonImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -421,16 +515,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, onAddFa
     handleClose();
   };
 
-  const SelectExistingResolve: React.FC<{ onSelect: (id: string) => void }> = ({ onSelect }) => (
-    <select onChange={(e) => onSelect(e.target.value)} defaultValue="" className="resolve-select">
-      <option value="" disabled>既存の家族から選択...</option>
-      {familyMembers.map(m => <option key={m.id} value={m.id}>{m.relationship}: {m.name}</option>)}
-    </select>
-  );
-
   if (!isOpen) return null;
-
-  const resolvingName = unresolvedNames[resolvingIndex];
 
   return (
     <div className="form-overlay">
@@ -457,29 +542,110 @@ const PolicyForm: React.FC<PolicyFormProps> = ({ isOpen, onClose, onAdd, onAddFa
           </div>
         </div>
 
-        {resolvingName && (
+        {unresolvedNames.length > 0 && (
           <div className="resolve-wizard full-width">
             <div className="resolve-wizard-header">
               <Upload size={20} className="resolve-icon" />
-              <h4>名前の確認が必要です ({resolvingIndex + 1} / {unresolvedNames.length})</h4>
+              <h4>家族情報の確認が必要です</h4>
             </div>
             <p className="resolve-instruction">
-              JSON内の名前「<strong>{resolvingName.originalName}</strong>」様をアプリの<strong>{resolvingName.label}</strong>として登録します。誰のことですか？
+              JSON内の名前が家族情報にありません。既存家族へ紐付けるか、続柄などを確認して新しい家族として追加してください。
             </p>
-            <div className="resolve-options">
-              <div className="resolve-option-group">
-                <span className="resolve-option-label">既存の家族から選ぶ:</span>
-                <SelectExistingResolve onSelect={resolveMatch} />
-              </div>
-              <div className="resolve-divider">または</div>
-              <div className="resolve-btn-group">
-                <button type="button" className="resolve-btn-new" onClick={() => resolveMatch('new')}>
-                  新しい家族として追加登録
-                </button>
-                <button type="button" className="resolve-btn-skip" onClick={() => resolveMatch('')}>
-                  スキップして手動で選ぶ
-                </button>
-              </div>
+            <datalist id="policy-relationship-suggestions">
+              {relationshipSuggestions.map(value => <option key={value} value={value} />)}
+            </datalist>
+            <div className="resolve-table-wrap">
+              <table className="resolve-table">
+                <thead>
+                  <tr>
+                    <th>JSON項目</th>
+                    <th>名前</th>
+                    <th>登録方法</th>
+                    <th>続柄 <span className="resolve-th-hint">候補選択・直接入力</span></th>
+                    <th>生年月日（任意）</th>
+                    <th>性別</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unresolvedNames.map((item, index) => {
+                    const modeValue = item.mode === 'existing' ? `existing:${item.selectedMemberId}` : item.mode;
+                    const isNew = item.mode === 'new';
+                    const rowError = unresolvedNameErrors[index];
+                    const errorId = `unresolved-name-error-${index}`;
+
+                    return (
+                      <tr key={`${item.field}-${item.originalName}-${index}`}>
+                        <td>{item.label}</td>
+                        <td><strong>{item.originalName}</strong></td>
+                        <td>
+                          <select
+                            value={modeValue}
+                            onChange={e => handleUnresolvedModeChange(index, e.target.value)}
+                            className="resolve-select"
+                            aria-invalid={Boolean(rowError && item.mode === 'existing')}
+                            aria-describedby={rowError && item.mode === 'existing' ? errorId : undefined}
+                          >
+                            <option value="new">新しい家族として追加</option>
+                            <option value="skip">手動で選ぶ</option>
+                            {familyMembers.length > 0 && (
+                              <optgroup label="既存の家族に紐付け">
+                                {familyMembers.map(m => (
+                                  <option key={m.id} value={`existing:${m.id}`}>{m.relationship}: {m.name}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </select>
+                          {rowError && item.mode === 'existing' && <span id={errorId} className="resolve-row-error">{rowError}</span>}
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            list="policy-relationship-suggestions"
+                            value={item.relationship}
+                            placeholder="例: 本人、長男など"
+                            disabled={!isNew}
+                            onChange={e => updateUnresolvedName(index, { relationship: e.target.value })}
+                            className="resolve-input"
+                            aria-invalid={Boolean(rowError && isNew)}
+                            aria-describedby={rowError && isNew ? errorId : undefined}
+                          />
+                          {rowError && isNew && <span id={errorId} className="resolve-row-error">{rowError}</span>}
+                        </td>
+                        <td>
+                          <input
+                            type="date"
+                            value={item.birthDate}
+                            disabled={!isNew}
+                            onChange={e => updateUnresolvedName(index, { birthDate: e.target.value })}
+                            className="resolve-input"
+                            aria-label={`${item.originalName}の生年月日`}
+                          />
+                        </td>
+                        <td>
+                          <select
+                            value={item.gender}
+                            disabled={!isNew}
+                            onChange={e => updateUnresolvedName(index, { gender: e.target.value as FamilyMember['gender'] })}
+                            className="resolve-select"
+                          >
+                            <option value="male">男</option>
+                            <option value="female">女</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <p className="resolve-note">続柄は候補にない表記も直接入力できます。生年月日が不明な場合は空欄のまま追加し、あとで世帯・家族情報から入力できます。</p>
+            </div>
+            <div className="resolve-btn-group">
+              <button type="button" className="resolve-btn-new" onClick={applyUnresolvedNames} disabled={hasUnresolvedNameErrors}>
+                確認内容で追加して反映
+              </button>
+              <button type="button" className="resolve-btn-skip" onClick={skipUnresolvedNames}>
+                すべて手動で選ぶ
+              </button>
             </div>
           </div>
         )}

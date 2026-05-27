@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { FamilyMember, Agency, AgencyMaster } from '@/types';
 import { fetchAgencyMasters } from '@/lib/api';
 import { User, X, Plus, Trash2, Building2, Download } from 'lucide-react';
+import { mergeRelationshipSuggestions } from '@/utils/relationshipOptions';
 
 interface CustomerModalProps {
   familyMembers: FamilyMember[];
@@ -23,6 +24,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
   const [tempAgency, setTempAgency] = useState<Agency>(agency);
   const [agencyMasters, setAgencyMasters] = useState<AgencyMaster[]>([]);
   const composingRef = useRef(false);
+  const relationshipSuggestions = useMemo(
+    () => mergeRelationshipSuggestions(tempMembers.map(member => member.relationship)),
+    [tempMembers],
+  );
 
   useEffect(() => {
     fetchAgencyMasters().then(setAgencyMasters).catch(() => {});
@@ -34,7 +39,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
       name: '',
       nameKana: '',
       relationship: '',
-      birthDate: new Date().toISOString().split('T')[0],
+      birthDate: '',
       gender: 'male'
     };
     setTempMembers([...tempMembers, newMember]);
@@ -76,11 +81,14 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
 
         <form onSubmit={handleSubmit}>
           <h4>世帯・家族情報</h4>
+          <datalist id="customer-relationship-suggestions">
+            {relationshipSuggestions.map(value => <option key={value} value={value} />)}
+          </datalist>
           <div className="family-list">
             {tempMembers.map((member, index) => (
               <div key={member.id} className="family-member-row">
-                <div className="form-group small"><label>続柄</label>
-                  <input type="text" value={member.relationship} placeholder={index === 0 ? "本人" : "妻など"}
+                <div className="form-group small"><label className="label-with-hint">続柄 <span>候補選択・直接入力</span></label>
+                  <input type="text" list="customer-relationship-suggestions" value={member.relationship} placeholder={index === 0 ? "例: 本人" : "例: 長男、妻など"}
                     onChange={e => updateMember(member.id, 'relationship', e.target.value)} required />
                 </div>
                 <div className="form-group"><label>氏名</label>
@@ -92,8 +100,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ familyMembers, agency, on
                     onCompositionEnd={e => { composingRef.current = false; updateMember(member.id, 'nameKana', e.currentTarget.value); }}
                     onChange={e => updateMember(member.id, 'nameKana', e.target.value)} />
                 </div>
-                <div className="form-group"><label>生年月日</label>
-                  <input type="date" value={member.birthDate} onChange={e => updateMember(member.id, 'birthDate', e.target.value)} required />
+                <div className="form-group"><label>生年月日（任意）</label>
+                  <input type="date" value={member.birthDate} onChange={e => updateMember(member.id, 'birthDate', e.target.value)} />
                 </div>
                 <div className="form-group small"><label>性別</label>
                   <select value={member.gender} onChange={e => updateMember(member.id, 'gender', e.target.value)}>

@@ -15,7 +15,7 @@ import ToastContainer, { type ToastMessage } from '@/components/Toast';
 import type { Policy, FamilyMember, Agency, AppState } from '@/types';
 import { fetchAppState, saveAppState as apiSave, resetAppState, clearAppState, getExportUrl, getBackupUrl, restoreBackup } from '@/lib/api';
 
-import { Printer, Trash2, FileUp, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft, DatabaseBackup } from 'lucide-react';
+import { AlertTriangle, Printer, Trash2, FileUp, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft, DatabaseBackup } from 'lucide-react';
 
 const VALID_POLICY_TYPES = ['個人年金保険', '収入保障保険', '変額終身保険', '医療保険', '終身保険', '養老保険'] as const;
 const VALID_FREQUENCIES = ['monthly', 'annual', 'single'] as const;
@@ -161,18 +161,26 @@ export default function Page() {
   };
 
   const calculateAge = (birthDate: string) => {
+    if (!birthDate) return null;
+
     const today = new Date();
     const birth = new Date(birthDate);
+    if (Number.isNaN(birth.getTime())) return null;
+
     let age = today.getFullYear() - birth.getFullYear();
     const m = today.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
+    if (age < 0) return null;
     return age;
   };
 
   const self = familyMembers.find(m => m.relationship === "本人") || familyMembers[0];
-  const currentAge = self ? calculateAge(self.birthDate) : 0;
+  const displayAge = self ? calculateAge(self.birthDate) : null;
+  const hasKnownCurrentAge = displayAge !== null;
+  const birthDateLabel = self?.birthDate || '生年月日未入力';
+  const ageLabel = displayAge === null ? '年齢未入力' : `${displayAge}歳`;
 
   const handleAddOrUpdatePolicy = (policy: Policy) => {
     if (editingPolicy) {
@@ -183,6 +191,14 @@ export default function Page() {
     }
     setHasUnsavedChanges(true);
   };
+
+  const handleAddFamilyMemberFromPolicy = useCallback((member: FamilyMember) => {
+    setFamilyMembers(prev => {
+      if (prev.some(existing => existing.id === member.id)) return prev;
+      return [...prev, member];
+    });
+    setHasUnsavedChanges(true);
+  }, []);
 
   const handleDeletePolicy = (id: string) => {
     if (window.confirm("この保険証券を削除しますか？")) {
@@ -329,7 +345,7 @@ export default function Page() {
           </h1>
           <div className="customer-summary-display" onClick={() => setIsCustomerModalOpen(true)} title="クリックして情報を編集">
             <span className="customer-name-tag">{self?.name} 様</span>
-            <span className="customer-meta-tag">({self?.birthDate} | {currentAge}歳 | 世帯人数: {familyMembers.length}名)</span>
+            <span className="customer-meta-tag">({birthDateLabel} | {ageLabel} | 世帯人数: {familyMembers.length}名)</span>
             <Settings size={16} className="settings-icon" />
           </div>
         </div>
@@ -373,7 +389,20 @@ export default function Page() {
       </header>
 
       <main>
-        <SummaryDashboard policies={policies} currentAge={currentAge} />
+        {!hasKnownCurrentAge && policies.length > 0 && (
+          <div className="age-analysis-notice no-print">
+            <AlertTriangle size={20} />
+            <div>
+              <strong>年齢を使う集計・グラフ・診断は非表示にしています</strong>
+              <p>本人の生年月日が未入力のため、現在年齢が必要な結果を計算できません。生年月日を入力すると自動で表示されます。</p>
+            </div>
+            <button type="button" onClick={() => setIsCustomerModalOpen(true)}>
+              世帯・家族情報を開く
+            </button>
+          </div>
+        )}
+
+        <SummaryDashboard policies={policies} currentAge={displayAge} />
 
         <PolicyTable
           policies={policies}
@@ -384,28 +413,32 @@ export default function Page() {
           onReorder={handleReorderPolicy}
         />
 
-        <div className="charts-container">
-          <div className="chart-item">
-            <CoverageChart policies={policies} currentAge={currentAge} />
+        {displayAge !== null && (
+          <div className="charts-container">
+            <div className="chart-item">
+              <CoverageChart policies={policies} currentAge={displayAge} />
+            </div>
+            <div className="chart-item">
+              <CostChart policies={policies} currentAge={displayAge} />
+            </div>
           </div>
-          <div className="chart-item">
-            <CostChart policies={policies} currentAge={currentAge} />
-          </div>
-        </div>
+        )}
 
-        <PolicyAnalysisSection
-          caseId={activeCaseId!}
-          policies={policies}
-          currentAge={currentAge}
-          familyMembers={familyMembers}
-          onUpdateNote={handleUpdateNote}
-        />
+        {displayAge !== null && (
+          <PolicyAnalysisSection
+            caseId={activeCaseId!}
+            policies={policies}
+            currentAge={displayAge}
+            familyMembers={familyMembers}
+            onUpdateNote={handleUpdateNote}
+          />
+        )}
 
         <PolicyForm
           isOpen={isPolicyFormOpen}
           onClose={() => { setIsPolicyFormOpen(false); setEditingPolicy(null); }}
           onAdd={handleAddOrUpdatePolicy}
-          onAddFamilyMember={(member) => setFamilyMembers([...familyMembers, member])}
+          onAddFamilyMember={handleAddFamilyMemberFromPolicy}
           familyMembers={familyMembers}
           editingPolicy={editingPolicy}
           onCancel={() => setEditingPolicy(null)}

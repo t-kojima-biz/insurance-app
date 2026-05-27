@@ -61,6 +61,11 @@ h1 {
   color: #2d3748;
 }
 
+.card-value-muted {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
 .charts-container {
   display: flex;
   flex-direction: column;
@@ -284,6 +289,27 @@ h1 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.label-with-hint {
+  display: flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.label-with-hint span,
+.resolve-th-hint {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .calc-btn {
@@ -522,6 +548,56 @@ h1 {
   cursor: pointer;
   padding: 0 0.25rem;
   line-height: 1;
+}
+
+.age-analysis-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  color: #78350f;
+}
+
+.age-analysis-notice svg {
+  flex: 0 0 auto;
+  color: #d97706;
+  margin-top: 0.1rem;
+}
+
+.age-analysis-notice div {
+  flex: 1;
+}
+
+.age-analysis-notice strong {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+
+.age-analysis-notice p {
+  margin: 0;
+  color: #92400e;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.age-analysis-notice button {
+  flex: 0 0 auto;
+  background: #92400e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.age-analysis-notice button:hover {
+  background: #78350f;
 }
 
 .csv-import-dialog {
@@ -845,7 +921,7 @@ h1 {
 .resolve-wizard {
   background: #fffbeb;
   border: 2px solid #fcd34d;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -907,10 +983,75 @@ h1 {
 
 .resolve-select {
   flex: 1;
+  width: 100%;
   padding: 0.6rem !important;
   border: 1px solid #fcd34d !important;
   background: white !important;
   font-size: 0.9rem !important;
+}
+
+.resolve-table-wrap {
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.resolve-table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.resolve-table th {
+  color: #78350f;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+
+.resolve-table td {
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid #fde68a;
+  vertical-align: top;
+}
+
+.resolve-table tr:last-child td {
+  border-bottom: none;
+}
+
+.resolve-input {
+  width: 100%;
+  padding: 0.6rem !important;
+  border: 1px solid #fcd34d !important;
+  background: white !important;
+  border-radius: 6px;
+  font-size: 0.9rem !important;
+}
+
+.resolve-input:disabled,
+.resolve-select:disabled {
+  background: #f8fafc !important;
+  color: #94a3b8 !important;
+}
+
+.resolve-note {
+  margin: 0.75rem 0 0;
+  color: #92400e;
+  font-size: 0.82rem;
+}
+
+.resolve-row-error {
+  display: block;
+  margin-top: 0.3rem;
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .resolve-divider {
@@ -937,6 +1078,7 @@ h1 {
 .resolve-btn-group {
   display: flex;
   gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .resolve-btn-new {
@@ -953,6 +1095,16 @@ h1 {
 
 .resolve-btn-new:hover {
   background: #2f855a;
+}
+
+.resolve-btn-new:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: default;
+}
+
+.resolve-btn-new:disabled:hover {
+  background: #cbd5e1;
 }
 
 .resolve-btn-skip {
@@ -2253,6 +2405,14 @@ h1 {
 }
 
 @media (max-width: 768px) {
+  .age-analysis-notice {
+    flex-direction: column;
+  }
+
+  .age-analysis-notice button {
+    width: 100%;
+  }
+
   .pac-body {
     grid-template-columns: 1fr;
   }

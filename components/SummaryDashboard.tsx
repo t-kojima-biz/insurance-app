@@ -4,7 +4,7 @@ import { CreditCard, Shield, Activity } from 'lucide-react';
 
 interface SummaryDashboardProps {
   policies: Policy[];
-  currentAge: number;
+  currentAge: number | null;
 }
 
 const SummaryDashboard: React.FC<SummaryDashboardProps> = ({ policies, currentAge }) => {
@@ -12,7 +12,7 @@ const SummaryDashboard: React.FC<SummaryDashboardProps> = ({ policies, currentAg
     return sum + (p.paymentFrequency === 'monthly' ? p.premiumAmount : p.premiumAmount / 12);
   }, 0);
 
-  const totalDeathBenefit = policies.reduce((sum, p) => {
+  const totalDeathBenefit = currentAge === null ? null : policies.reduce((sum, p) => {
     if (currentAge < p.policyEndAge || p.policyEndAge === 999) {
         let amount = p.deathBenefitDisease;
         if (p.policyType === '収入保障保険') {
@@ -25,7 +25,7 @@ const SummaryDashboard: React.FC<SummaryDashboardProps> = ({ policies, currentAg
     return sum;
   }, 0);
 
-  const totalHospBenefit = policies.reduce((sum, p) => {
+  const totalHospBenefit = currentAge === null ? null : policies.reduce((sum, p) => {
     if (currentAge < p.policyEndAge || p.policyEndAge === 999) {
         return sum + p.hospDayDisease;
     }
@@ -47,7 +47,9 @@ const SummaryDashboard: React.FC<SummaryDashboardProps> = ({ policies, currentAg
           <Shield className="icon" />
           <span>現在の死亡保障額</span>
         </div>
-        <div className="card-value">{(totalDeathBenefit / 10000).toLocaleString()}万円</div>
+        <div className={`card-value ${totalDeathBenefit === null ? 'card-value-muted' : ''}`}>
+          {totalDeathBenefit === null ? '年齢未入力' : `${(totalDeathBenefit / 10000).toLocaleString()}万円`}
+        </div>
       </div>
 
       <div className="summary-card">
@@ -55,7 +57,9 @@ const SummaryDashboard: React.FC<SummaryDashboardProps> = ({ policies, currentAg
           <Activity className="icon" />
           <span>現在の入院日額</span>
         </div>
-        <div className="card-value">{totalHospBenefit.toLocaleString()}円</div>
+        <div className={`card-value ${totalHospBenefit === null ? 'card-value-muted' : ''}`}>
+          {totalHospBenefit === null ? '年齢未入力' : `${totalHospBenefit.toLocaleString()}円`}
+        </div>
       </div>
     </div>
   );

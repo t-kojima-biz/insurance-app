@@ -15,7 +15,7 @@ import ToastContainer, { type ToastMessage } from '@/components/Toast';
 import type { Policy, FamilyMember, Agency, AppState } from '@/types';
 import { fetchAppState, saveAppState as apiSave, resetAppState, clearAppState, getExportUrl, getBackupUrl, restoreBackup } from '@/lib/api';
 
-import { Printer, Trash2, FileJson, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft, DatabaseBackup, FileCog, FileDown } from 'lucide-react';
+import { Printer, Trash2, FileUp, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft, DatabaseBackup } from 'lucide-react';
 
 const VALID_POLICY_TYPES = ['個人年金保険', '収入保障保険', '変額終身保険', '医療保険', '終身保険', '養老保険'] as const;
 const VALID_FREQUENCIES = ['monthly', 'annual', 'single'] as const;
@@ -51,7 +51,7 @@ export default function Page() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -218,7 +218,7 @@ export default function Page() {
 
   const handleEditStart = (policy: Policy) => {
     setEditingPolicy(policy);
-    setIsFormOpen(true);
+    setIsPolicyFormOpen(true);
   };
 
   const handlePrint = () => {
@@ -341,7 +341,7 @@ export default function Page() {
             {menuOpen && (
               <div className="dropdown-menu">
                 <button onClick={() => { setMenuOpen(false); loadSampleData(); }}>
-                  <FileJson size={16} /> サンプル読込
+                  <FileUp size={16} /> サンプル読込
                 </button>
                 <button onClick={() => { setMenuOpen(false); setCsvImportOpen(true); }}>
                   <Upload size={16} /> CSV取込
@@ -354,7 +354,7 @@ export default function Page() {
                   <DatabaseBackup size={16} /> バックアップ
                 </button>
                 <button onClick={() => { setMenuOpen(false); restoreInputRef.current?.click(); }}>
-                  <FileCog size={16} /> 復元
+                  <Settings size={16} /> 復元
                 </button>
                 <hr />
                 <button className="dropdown-danger" onClick={() => { setMenuOpen(false); handleClear(); }}>
@@ -380,7 +380,7 @@ export default function Page() {
           familyMembers={familyMembers}
           onDelete={handleDeletePolicy}
           onEdit={handleEditStart}
-          onAddNew={() => setIsFormOpen(true)}
+          onAddNew={() => setIsPolicyFormOpen(true)}
           onReorder={handleReorderPolicy}
         />
 
@@ -402,13 +402,15 @@ export default function Page() {
         />
 
         <PolicyForm
-          isOpen={isFormOpen || editingPolicy !== null}
-          onClose={() => { setIsFormOpen(false); setEditingPolicy(null); }}
+          isOpen={isPolicyFormOpen}
+          onClose={() => { setIsPolicyFormOpen(false); setEditingPolicy(null); }}
           onAdd={handleAddOrUpdatePolicy}
+          onAddFamilyMember={(member) => setFamilyMembers([...familyMembers, member])}
           familyMembers={familyMembers}
           editingPolicy={editingPolicy}
           onCancel={() => setEditingPolicy(null)}
         />
+
       </main>
     </div>
   );

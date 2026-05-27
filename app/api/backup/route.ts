@@ -3,6 +3,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { getDb, closeDb } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 const isServerless = process.env.VERCEL || process.env.LAMBDA_TASK_ROOT || process.env.AWS_LAMBDA_FUNCTION_NAME;
 const getDatabasePath = () =>
   process.env.DATABASE_PATH

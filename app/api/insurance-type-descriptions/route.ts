@@ -3,6 +3,8 @@ import { listDescriptions, updateDescription } from '@/services/insuranceTypeDes
 import { INSURANCE_TYPE_INFO } from '@/utils/analysisUtils';
 import type { PolicyType } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 export function GET() {
   return NextResponse.json(listDescriptions());
 }

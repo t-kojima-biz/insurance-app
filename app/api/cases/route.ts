@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { listCases, createCase } from '@/services/cases';
 
+export const dynamic = 'force-dynamic';
+
 export function GET() {
   try {
     const cases = listCases();

@@ -764,8 +764,210 @@ h1 {
   font-weight: 600;
 }
 
-.add-member-btn:hover {
-  background: #ebf8ff;
+.json-import-btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  color: #3182ce;
+  border: 1px solid #3182ce;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.json-paste-area {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.json-paste-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+  background: white;
+  box-sizing: border-box;
+}
+
+.json-paste-textarea:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.15);
+}
+
+.json-paste-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.json-paste-apply-btn {
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 0.4rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.json-paste-apply-btn:hover {
+  background: #2b6cb0;
+}
+
+.json-paste-cancel-btn {
+  background: white;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.json-paste-cancel-btn:hover {
+  background: #f1f5f9;
+}
+
+/* ===== 名前紐付けウィザード ===== */
+.resolve-wizard {
+  background: #fffbeb;
+  border: 2px solid #fcd34d;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  animation: slide-down 0.3s ease-out;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.resolve-wizard-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #92400e;
+}
+
+.resolve-icon {
+  color: #f59e0b;
+}
+
+.resolve-wizard-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+}
+
+.resolve-instruction {
+  font-size: 0.95rem;
+  color: #451a03;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.resolve-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.resolve-option-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.resolve-option-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #92400e;
+  white-space: nowrap;
+}
+
+.resolve-select {
+  flex: 1;
+  padding: 0.6rem !important;
+  border: 1px solid #fcd34d !important;
+  background: white !important;
+  font-size: 0.9rem !important;
+}
+
+.resolve-divider {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #d97706;
+  font-weight: 700;
+  position: relative;
+}
+
+.resolve-divider::before,
+.resolve-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 42%;
+  height: 1px;
+  background: #fcd34d;
+}
+
+.resolve-divider::before { left: 0; }
+.resolve-divider::after { right: 0; }
+
+.resolve-btn-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.resolve-btn-new {
+  flex: 2;
+  background: #38a169;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.resolve-btn-new:hover {
+  background: #2f855a;
+}
+
+.resolve-btn-skip {
+  flex: 1;
+  background: white;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.resolve-btn-skip:hover {
+  background: #f1f5f9;
 }
 
 .modal-header {

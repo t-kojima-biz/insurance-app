@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { listAgencyMasters, createAgencyMaster } from '@/services/agencyMasters';
 
+export const dynamic = 'force-dynamic';
+
 export function GET() {
   return NextResponse.json(listAgencyMasters());
 }

@@ -262,14 +262,16 @@ export function importCsv(
     const insuredBirthRow = db.prepare('SELECT birth_date FROM family_members WHERE id = ?').get(insuredId) as { birth_date: string } | undefined;
     const insuredBirthDate = insuredBirthRow?.birth_date ?? '';
 
+    const hasBirthDate = Boolean(insuredBirthDate && !isNaN(new Date(insuredBirthDate).getTime()));
+
     let contractAge = parseIntOrDefault(row.contractAge, -1);
-    if (contractAge < 0 && insuredBirthDate && row.contractDate?.trim()) {
+    if (contractAge < 0 && hasBirthDate && row.contractDate?.trim()) {
       contractAge = calcAge(insuredBirthDate, row.contractDate.trim());
     }
     if (contractAge < 0) contractAge = 0;
 
     let paymentEndAge = parseIntOrDefault(row.paymentEndAge, -1);
-    if (paymentEndAge < 0 && insuredBirthDate && row.paymentEndDate?.trim()) {
+    if (paymentEndAge < 0 && hasBirthDate && row.paymentEndDate?.trim()) {
       paymentEndAge = calcAge(insuredBirthDate, row.paymentEndDate.trim());
     }
     if (paymentEndAge < 0) paymentEndAge = 0;

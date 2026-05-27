@@ -38,7 +38,7 @@ export function validateAppState(body: unknown): ValidationResult {
       if (typeof m.name !== 'string') errors.push({ field: `familyMembers[${i}].name`, message: 'name は文字列が必要です' });
       if (m.nameKana !== undefined && typeof m.nameKana !== 'string') errors.push({ field: `familyMembers[${i}].nameKana`, message: 'nameKana は文字列が必要です' });
       if (typeof m.relationship !== 'string') errors.push({ field: `familyMembers[${i}].relationship`, message: 'relationship は文字列が必要です' });
-      if (typeof m.birthDate !== 'string') errors.push({ field: `familyMembers[${i}].birthDate`, message: 'birthDate は文字列が必要です' });
+      if (m.birthDate !== undefined && typeof m.birthDate !== 'string') errors.push({ field: `familyMembers[${i}].birthDate`, message: 'birthDate は文字列が必要です' });
       if (!VALID_GENDERS.includes(m.gender as typeof VALID_GENDERS[number])) {
         errors.push({ field: `familyMembers[${i}].gender`, message: 'gender は male または female が必要です' });
       }

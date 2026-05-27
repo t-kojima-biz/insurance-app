@@ -3,7 +3,6 @@ import type { Agency } from '@/types';
 
 interface PrintCoverPageProps {
   customerName: string;
-  birthDate: string;
   agency: Agency;
 }
 

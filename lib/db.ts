@@ -71,7 +71,7 @@ function runMigrations(db: Database.Database): void {
       name TEXT NOT NULL,
       name_kana TEXT NOT NULL DEFAULT '',
       relationship TEXT NOT NULL,
-      birth_date TEXT NOT NULL,
+      birth_date TEXT NOT NULL DEFAULT '',
       gender TEXT NOT NULL CHECK (gender IN ('male', 'female')),
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),

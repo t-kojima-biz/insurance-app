@@ -299,7 +299,7 @@ export default function Page() {
 
   return (
     <div className="App">
-      <PrintCoverPage customerName={self?.name || ""} birthDate={self?.birthDate || ""} agency={agency} />
+      <PrintCoverPage customerName={self?.name || ""} agency={agency} />
 
       {isCustomerModalOpen && (
         <CustomerModal

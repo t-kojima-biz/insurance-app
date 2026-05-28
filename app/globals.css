@@ -855,6 +855,65 @@ h1 {
   transition: all 0.2s;
 }
 
+.json-import-btn-outline.is-active {
+  background: #ebf8ff;
+}
+
+.prompt-editor {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.prompt-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.prompt-editor-header h4 {
+  margin: 0;
+  border: 0;
+  color: #0f172a;
+}
+
+.prompt-editor-textarea {
+  width: 100%;
+  min-height: 320px;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: white;
+  box-sizing: border-box;
+}
+
+.prompt-editor-textarea:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.15);
+}
+
+.prompt-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.prompt-editor-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .json-paste-area {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -917,38 +976,6 @@ h1 {
   background: #f1f5f9;
 }
 
-.json-import-preview {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.json-import-preview-header,
-.json-import-preview-actions,
-.json-import-undo-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.json-import-preview-header h4 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 0.25rem;
-  border: 0;
-  color: #0f172a;
-}
-
-.json-import-preview-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.85rem;
-}
-
 .json-import-alert {
   display: flex;
   align-items: center;
@@ -963,49 +990,6 @@ h1 {
   font-weight: 600;
 }
 
-.json-import-preview-table-wrap {
-  overflow-x: auto;
-  margin-top: 0.9rem;
-}
-
-.json-import-preview-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 980px;
-  font-size: 0.82rem;
-}
-
-.json-import-preview-table th,
-.json-import-preview-table td {
-  border-bottom: 1px solid #e2e8f0;
-  padding: 0.55rem;
-  text-align: left;
-  vertical-align: top;
-}
-
-.json-import-preview-table th {
-  background: #eef2f7;
-  color: #334155;
-  font-weight: 700;
-}
-
-.json-import-row-blocked {
-  background: #fff7ed;
-}
-
-.json-import-ok {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #166534;
-  font-weight: 700;
-}
-
-.json-import-muted {
-  color: #64748b;
-  font-size: 0.8rem;
-}
-
 .json-import-warning-list {
   display: flex;
   flex-direction: column;
@@ -1013,54 +997,9 @@ h1 {
   color: #92400e;
 }
 
-.json-import-preview-actions {
-  justify-content: flex-end;
-  margin-top: 1rem;
-}
-
 .json-paste-apply-btn:disabled {
   background: #94a3b8;
   cursor: not-allowed;
-}
-
-.json-import-undo-bar {
-  background: #ecfdf5;
-  border: 1px solid #86efac;
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
-  margin-bottom: 1rem;
-}
-
-.json-import-undo-bar div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.json-import-undo-bar strong {
-  color: #166534;
-}
-
-.json-import-undo-bar span {
-  color: #047857;
-  font-size: 0.85rem;
-}
-
-.json-import-undo-bar button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: white;
-  color: #166534;
-  border: 1px solid #86efac;
-  border-radius: 6px;
-  padding: 0.45rem 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.json-import-undo-bar button:hover {
-  background: #dcfce7;
 }
 
 /* ===== 名前紐付けウィザード ===== */

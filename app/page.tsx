@@ -15,7 +15,7 @@ import ToastContainer, { type ToastMessage } from '@/components/Toast';
 import type { Policy, FamilyMember, Agency, AppState } from '@/types';
 import { fetchAppState, saveAppState as apiSave, resetAppState, clearAppState, getExportUrl, getBackupUrl, restoreBackup } from '@/lib/api';
 
-import { AlertTriangle, Printer, Trash2, FileUp, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft, DatabaseBackup, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Printer, Trash2, FileUp, Settings, Save, Upload, Download, Menu, ChevronDown, ArrowLeft, DatabaseBackup } from 'lucide-react';
 
 const VALID_POLICY_TYPES = ['個人年金保険', '収入保障保険', '変額終身保険', '医療保険', '終身保険', '養老保険'] as const;
 const VALID_FREQUENCIES = ['monthly', 'annual', 'single'] as const;
@@ -59,11 +59,6 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [lastImportSnapshot, setLastImportSnapshot] = useState<{
-    policies: Policy[];
-    familyMembers: FamilyMember[];
-    label: string;
-  } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const restoreInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,7 +77,6 @@ export default function Page() {
     setAgency(state.agency);
     setHasUnsavedChanges(false);
     setError(null);
-    setLastImportSnapshot(null);
   }, []);
 
   const loadFromApi = useCallback(async (caseId: string) => {
@@ -189,7 +183,6 @@ export default function Page() {
   const ageLabel = displayAge === null ? '年齢未入力' : `${displayAge}歳`;
 
   const handleAddOrUpdatePolicy = (policy: Policy) => {
-    setLastImportSnapshot(null);
     if (editingPolicy) {
       setPolicies(policies.map(p => p.id === policy.id ? policy : p));
       setEditingPolicy(null);
@@ -200,7 +193,6 @@ export default function Page() {
   };
 
   const handleAddFamilyMemberFromPolicy = useCallback((member: FamilyMember) => {
-    setLastImportSnapshot(null);
     setFamilyMembers(prev => {
       if (prev.some(existing => existing.id === member.id)) {
         return prev.map(existing => existing.id === member.id ? { ...existing, ...member } : existing);
@@ -210,58 +202,14 @@ export default function Page() {
     setHasUnsavedChanges(true);
   }, []);
 
-  const handleImportPolicies = useCallback((importedPolicies: Policy[], importedMembers: FamilyMember[], label: string) => {
-    if (importedPolicies.length === 0) return;
-
-    setLastImportSnapshot({
-      policies,
-      familyMembers,
-      label,
-    });
-
-    setFamilyMembers(prev => {
-      const next = [...prev];
-      for (const member of importedMembers) {
-        const index = next.findIndex(existing => existing.id === member.id);
-        if (index >= 0) next[index] = { ...next[index], ...member };
-        else next.push(member);
-      }
-      return next;
-    });
-
-    setPolicies(prev => {
-      const next = [...prev];
-      for (const policy of importedPolicies) {
-        const index = next.findIndex(existing => existing.id === policy.id);
-        if (index >= 0) next[index] = policy;
-        else next.push(policy);
-      }
-      return next;
-    });
-
-    setHasUnsavedChanges(true);
-    addToast('success', `${label}を反映しました`);
-  }, [addToast, familyMembers, policies]);
-
-  const handleUndoLastImport = useCallback(() => {
-    if (!lastImportSnapshot) return;
-    setPolicies(lastImportSnapshot.policies);
-    setFamilyMembers(lastImportSnapshot.familyMembers);
-    setLastImportSnapshot(null);
-    setHasUnsavedChanges(true);
-    addToast('success', '直前のJSON取込を取り消しました');
-  }, [addToast, lastImportSnapshot]);
-
   const handleDeletePolicy = (id: string) => {
     if (window.confirm("この保険証券を削除しますか？")) {
-      setLastImportSnapshot(null);
       setPolicies(policies.filter(p => p.id !== id));
       setHasUnsavedChanges(true);
     }
   };
 
   const handleReorderPolicy = (draggedId: string, targetId: string, position: 'before' | 'after') => {
-    setLastImportSnapshot(null);
     setPolicies(currentPolicies => {
       const fromIndex = currentPolicies.findIndex(policy => policy.id === draggedId);
       const targetIndex = currentPolicies.findIndex(policy => policy.id === targetId);
@@ -282,7 +230,6 @@ export default function Page() {
   };
 
   const handleUpdateNote = (policyId: string, note: string) => {
-    setLastImportSnapshot(null);
     setPolicies(prev => prev.map(p => p.id === policyId ? { ...p, consultantNote: note } : p));
     setHasUnsavedChanges(true);
   };
@@ -339,7 +286,6 @@ export default function Page() {
   };
 
   const handleSaveModal = (updatedFamily: FamilyMember[], updatedAgency: Agency) => {
-    setLastImportSnapshot(null);
     setFamilyMembers(updatedFamily);
     setAgency(updatedAgency);
     setHasUnsavedChanges(true);
@@ -458,18 +404,6 @@ export default function Page() {
           </div>
         )}
 
-        {lastImportSnapshot && (
-          <div className="json-import-undo-bar no-print">
-            <div>
-              <strong>{lastImportSnapshot.label}</strong>
-              <span>直前のJSON取込を取り消せます</span>
-            </div>
-            <button type="button" onClick={handleUndoLastImport}>
-              <RotateCcw size={16} /> 取込を取り消す
-            </button>
-          </div>
-        )}
-
         <SummaryDashboard policies={policies} currentAge={displayAge} />
 
         <PolicyTable
@@ -506,7 +440,6 @@ export default function Page() {
           isOpen={isPolicyFormOpen}
           onClose={() => { setIsPolicyFormOpen(false); setEditingPolicy(null); }}
           onAdd={handleAddOrUpdatePolicy}
-          onImportPolicies={handleImportPolicies}
           onAddFamilyMember={handleAddFamilyMemberFromPolicy}
           familyMembers={familyMembers}
           existingPolicies={policies}

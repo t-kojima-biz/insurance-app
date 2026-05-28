@@ -3,14 +3,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Policy, PolicyType, FamilyMember } from '@/types';
-import { AlertTriangle, CheckCircle, Clipboard, FileUp, ListChecks, Upload, X } from 'lucide-react';
+import { AlertTriangle, Clipboard, FileUp, RotateCcw, Save, Upload, X } from 'lucide-react';
 import { mergeRelationshipSuggestions } from '@/utils/relationshipOptions';
 
 interface PolicyFormProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (policy: Policy) => void;
-  onImportPolicies?: (policies: Policy[], members: FamilyMember[], label: string) => void;
   onAddFamilyMember?: (member: FamilyMember) => void;
   familyMembers: FamilyMember[];
   existingPolicies?: Policy[];
@@ -35,11 +34,8 @@ interface UnresolvedName {
   refs?: UnresolvedNameRef[];
 }
 
-type DuplicateAction = 'overwrite' | 'new' | 'skip';
-
 interface ImportDraft {
   id: string;
-  sourceIndex: number;
   data: Partial<Policy>;
   insuredId: string;
   beneficiaryId: string;
@@ -47,8 +43,6 @@ interface ImportDraft {
   insuredName: string;
   beneficiaryName: string;
   warnings: string[];
-  duplicatePolicyId?: string;
-  duplicateAction: DuplicateAction;
 }
 
 const formatComma = (n: number) => n ? n.toLocaleString() : '';
@@ -76,10 +70,12 @@ const formatFamilyOptionLabel = (member: FamilyMember) => {
 const getDefaultFamilyMemberId = (members: FamilyMember[]) =>
   members.find(hasSearchableName)?.id || '';
 
-const GEMINI_POLICY_PROMPT = `保険証券の画像を読み取り、以下のJSON形式だけで出力してください。
+const PROMPT_STORAGE_KEY = 'insurance-policy-import-prompt';
+
+const DEFAULT_POLICY_PROMPT = `保険証券の画像を読み取り、以下のJSON形式だけで出力してください。
 説明文やMarkdownは不要です。読めない項目は "" または 0 にしてください。
 金額は円単位の整数、日付は YYYY-MM-DD 形式にしてください。
-複数の証券がある場合は、同じ形式のオブジェクトを配列で出力してください。
+1回の出力は1証券分だけにしてください。複数の証券がある場合は、1証券ずつ分けて出力してください。
 受取人が「被保険者と同じ」「同上」「本人」などの場合は "同上" としてください。
 
 {
@@ -207,7 +203,6 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
   isOpen,
   onClose,
   onAdd,
-  onImportPolicies,
   onAddFamilyMember,
   familyMembers,
   existingPolicies = [],
@@ -215,13 +210,19 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
   onCancel,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pasteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const previousOpenRef = useRef(false);
   const previousEditingPolicyIdRef = useRef<string | null>(null);
   const [showPasteArea, setShowPasteArea] = useState(false);
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [importDrafts, setImportDrafts] = useState<ImportDraft[]>([]);
   const [pendingImportMembers, setPendingImportMembers] = useState<FamilyMember[]>([]);
+  const [formImportWarnings, setFormImportWarnings] = useState<string[]>([]);
+  const [policyPrompt, setPolicyPrompt] = useState(DEFAULT_POLICY_PROMPT);
+  const [promptDraft, setPromptDraft] = useState(DEFAULT_POLICY_PROMPT);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [promptSaved, setPromptSaved] = useState(false);
   
   // マッチング未解決の名前管理
   const [unresolvedNames, setUnresolvedNames] = useState<UnresolvedName[]>([]);
@@ -243,6 +244,13 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     [unresolvedNames],
   );
   const hasUnresolvedNameErrors = unresolvedNameErrors.some(Boolean);
+
+  useEffect(() => {
+    const savedPrompt = window.localStorage.getItem(PROMPT_STORAGE_KEY);
+    if (!savedPrompt?.trim()) return;
+    setPolicyPrompt(savedPrompt);
+    setPromptDraft(savedPrompt);
+  }, []);
 
   const [formData, setFormData] = useState<Partial<Policy>>({
     companyName: '',
@@ -299,201 +307,18 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
       });
     }
     setShowPasteArea(false);
+    setShowPromptEditor(false);
     setPasteText('');
     setImportDrafts([]);
     setPendingImportMembers([]);
+    setFormImportWarnings([]);
     setUnresolvedNames([]);
     setLinkBeneficiaryToInsured(false);
     setPromptCopied(false);
+    setPromptSaved(false);
   }, [editingPolicy, familyMembers, isOpen]);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  const processJsonData = (rawJson: any) => {
-    const keyMap: Record<string, string> = {
-      '保険会社': 'companyName',
-      '保険会社名': 'companyName',
-      '保険種類': 'policyType',
-      '証券番号': 'policyNumber',
-      '契約日': 'contractDate',
-      '契約年齢': 'contractAge',
-      '被保険者': 'insuredName',
-      '被保険者名': 'insuredName',
-      '保険対象者': 'insuredName',
-      '受取人': 'beneficiaryName',
-      '受取人名': 'beneficiaryName',
-      '保険金受取人': 'beneficiaryName',
-      '死亡保障疾病': 'deathBenefitDisease',
-      '死亡保障（疾病）': 'deathBenefitDisease',
-      '死亡保障災害': 'deathBenefitAccident',
-      '死亡保障（災害）': 'deathBenefitAccident',
-      '入院日額疾病': 'hospDayDisease',
-      '入院日額（疾病）': 'hospDayDisease',
-      '入院日額災害': 'hospDayAccident',
-      '入院日額（災害）': 'hospDayAccident',
-      '診断一時金': 'diagnosisBenefit',
-      '保険期間': 'policyEndAge',
-      '払方': 'paymentFrequency',
-      '払込方法': 'paymentFrequency',
-      '保険料': 'premiumAmount',
-      '払込終了年齢': 'paymentEndAge',
-      '満期保険金': 'maturityBenefit',
-      'コンサルタントメモ': 'consultantNote',
-    };
-
-    const json: any = {};
-    for (const [k, v] of Object.entries(rawJson)) {
-      const trimmedKey = k.trim();
-      const mappedKey = keyMap[trimmedKey] || trimmedKey;
-      json[mappedKey] = v;
-    }
-
-    const cleanData: Partial<Policy> = {};
-
-    if (json.companyName) cleanData.companyName = String(json.companyName).replace(/様$/, '').trim();
-    if (json.policyNumber) cleanData.policyNumber = String(json.policyNumber).trim();
-    
-    if (json.policyType) {
-      const type = String(json.policyType);
-      if (type.includes('終身')) cleanData.policyType = '終身保険';
-      else if (type.includes('医療')) cleanData.policyType = '医療保険';
-      else if (type.includes('年金')) cleanData.policyType = '個人年金保険';
-      else if (type.includes('収入保障')) cleanData.policyType = '収入保障保険';
-      else if (type.includes('変額')) cleanData.policyType = '変額終身保険';
-      else if (type.includes('養老')) cleanData.policyType = '養老保険';
-    }
-
-    if (json.contractDate) {
-      const d = String(json.contractDate);
-      const stdMatch = d.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-      if (stdMatch) {
-        cleanData.contractDate = `${stdMatch[1]}-${stdMatch[2].padStart(2, '0')}-${stdMatch[3].padStart(2, '0')}`;
-      } else {
-        const japaneseDateMatch = d.match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})/);
-        if (japaneseDateMatch) {
-          cleanData.contractDate = `${japaneseDateMatch[1]}-${japaneseDateMatch[2].padStart(2, '0')}-${japaneseDateMatch[3].padStart(2, '0')}`;
-        } else {
-          const yearMatch = d.match(/(\d{4})/);
-          const mdMatch = d.match(/(\d{1,2})\s*月\s*(\d{1,2})/);
-          if (yearMatch && mdMatch) {
-            cleanData.contractDate = `${yearMatch[1]}-${mdMatch[1].padStart(2, '0')}-${mdMatch[2].padStart(2, '0')}`;
-          }
-        }
-      }
-    }
-
-    const parseNum = (v: any) => {
-      if (typeof v === 'number') return v;
-      if (!v) return 0;
-      const cleaned = String(v).replace(/,/g, '').match(/\d+/);
-      return cleaned ? parseInt(cleaned[0], 10) : 0;
-    };
-
-    if (json.contractAge) cleanData.contractAge = parseNum(json.contractAge);
-    if (json.deathBenefitDisease) cleanData.deathBenefitDisease = parseNum(json.deathBenefitDisease);
-    if (json.deathBenefitAccident) cleanData.deathBenefitAccident = parseNum(json.deathBenefitAccident);
-    if (json.hospDayDisease) cleanData.hospDayDisease = parseNum(json.hospDayDisease);
-    if (json.hospDayAccident) cleanData.hospDayAccident = parseNum(json.hospDayAccident);
-    if (json.diagnosisBenefit) cleanData.diagnosisBenefit = parseNum(json.diagnosisBenefit);
-    if (json.premiumAmount) cleanData.premiumAmount = parseNum(json.premiumAmount);
-    if (json.paymentEndAge) cleanData.paymentEndAge = parseNum(json.paymentEndAge);
-    if (json.maturityBenefit) cleanData.maturityBenefit = parseNum(json.maturityBenefit);
-
-    if (json.policyEndAge) {
-      if (String(json.policyEndAge).includes('終身')) {
-        cleanData.policyEndAge = 999;
-      } else {
-        cleanData.policyEndAge = parseNum(json.policyEndAge);
-      }
-    }
-
-    if (json.paymentFrequency) {
-      const f = String(json.paymentFrequency);
-      if (f.includes('一時')) cleanData.paymentFrequency = 'single';
-      else if (f.includes('年')) cleanData.paymentFrequency = 'annual';
-      else if (f.includes('月')) cleanData.paymentFrequency = 'monthly';
-    }
-
-    // 空の初期家族行は名前一致に使わない。
-    const memberCandidates = familyMembers
-      .map(member => ({
-        id: member.id,
-        name: normalizePersonName(member.name),
-        kana: normalizePersonName(member.nameKana),
-      }))
-      .filter(member => member.name || member.kana);
-
-    const findExistingMemberId = (memberId: unknown) => {
-      if (typeof memberId !== 'string' || !memberId) return null;
-      return familyMembers.some(member => member.id === memberId) ? memberId : null;
-    };
-
-    const findMemberId = (nameStr: unknown) => {
-      if (!nameStr) return null;
-      const target = normalizePersonName(nameStr);
-      if (!target) return null;
-
-      const exactMatch = memberCandidates.find(member => member.name === target);
-      if (exactMatch) return exactMatch.id;
-
-      const kanaMatch = memberCandidates.find(member => member.kana === target);
-      if (kanaMatch) return kanaMatch.id;
-
-      const partialMatch = memberCandidates.find(member => {
-        return (
-          (member.name && (member.name.includes(target) || target.includes(member.name))) ||
-          (member.kana && (member.kana.includes(target) || target.includes(member.kana)))
-        );
-      });
-
-      return partialMatch ? partialMatch.id : null;
-    };
-
-    // 解析と未解決名の抽出
-    const hasInsuredInput = Boolean(json.insuredId || json.insuredName);
-    const hasBeneficiaryInput = Boolean(json.beneficiaryId || json.beneficiaryName);
-    let insuredId = findExistingMemberId(json.insuredId) || findMemberId(json.insuredName);
-    const unresolved: UnresolvedName[] = [];
-    const initialPlaceholder = memberCandidates.length === 0
-      ? familyMembers.find(isEmptyFamilyPlaceholder)
-      : undefined;
-    
-    if (!insuredId && json.insuredName) {
-      const item = createUnresolvedName('insured', '被保険者', json.insuredName);
-      item.relationship = initialPlaceholder?.relationship || '本人';
-      unresolved.push(item);
-    }
-
-    let beneficiaryId = findExistingMemberId(json.beneficiaryId);
-    const bName = String(json.beneficiaryName || '').trim();
-    const beneficiaryIsSameAsInsured = Boolean(bName && normalizePersonName(bName) === normalizePersonName(json.insuredName || ''));
-    const shouldLinkBeneficiaryToInsured = Boolean(
-      bName.match(/^(本人|被保険者|同上|被保険者と同じ|左記に同じ)$/) || beneficiaryIsSameAsInsured
-    );
-
-    if (shouldLinkBeneficiaryToInsured) {
-      beneficiaryId = insuredId;
-    } else {
-      beneficiaryId = beneficiaryId || findMemberId(bName);
-      if (!beneficiaryId && bName) {
-        unresolved.push(createUnresolvedName('beneficiary', '受取人', bName));
-      }
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      ...cleanData,
-      insuredId: hasInsuredInput ? (insuredId || '') : prev.insuredId,
-      beneficiaryId: hasBeneficiaryInput ? (beneficiaryId || '') : prev.beneficiaryId,
-    }));
-    setLinkBeneficiaryToInsured(shouldLinkBeneficiaryToInsured);
-
-    if (unresolved.length > 0) {
-      setUnresolvedNames(unresolved);
-    } else {
-      setUnresolvedNames([]);
-    }
-  };
 
   const normalizeRawPolicyJson = (rawJson: any) => {
     const keyMap: Record<string, string> = {
@@ -632,7 +457,6 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
 
   const buildImportDraft = (
     rawJson: any,
-    sourceIndex: number,
     unresolvedMap: Map<string, UnresolvedName>,
   ): ImportDraft => {
     const json = normalizeRawPolicyJson(rawJson);
@@ -702,7 +526,6 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
 
     return {
       id: draftId,
-      sourceIndex,
       data,
       insuredId,
       beneficiaryId,
@@ -710,21 +533,79 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
       insuredName,
       beneficiaryName,
       warnings,
-      duplicatePolicyId: duplicate?.id,
-      duplicateAction: duplicate ? 'overwrite' : 'new',
     };
   };
 
   const prepareJsonImport = (parsed: any) => {
     const records = extractImportRecords(parsed);
     if (records.length === 0) throw new Error('JSONに証券データがありません');
+    if (records.length > 1) throw new Error('複数件のJSONはフォーム反映できません。1件ずつ取り込んでください。');
 
     const unresolvedMap = new Map<string, UnresolvedName>();
-    const drafts = records.map((record, index) => buildImportDraft(record, index, unresolvedMap));
+    const draft = buildImportDraft(records[0], unresolvedMap);
     setPendingImportMembers([]);
-    setImportDrafts(drafts);
-    setUnresolvedNames([...unresolvedMap.values()]);
+    setImportDrafts([]);
+    setFormImportWarnings([]);
     setLinkBeneficiaryToInsured(false);
+    setFormErrors({});
+
+    const unresolved = [...unresolvedMap.values()];
+    if (unresolved.length > 0) {
+      setImportDrafts([draft]);
+      setUnresolvedNames(unresolved);
+      setShowPasteArea(false);
+      return;
+    }
+
+    reflectImportDraftToForm(draft);
+    setUnresolvedNames([]);
+  };
+
+  const parseImportJsonText = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) throw new Error('JSONが空です');
+
+    const candidates = [trimmed];
+    const fencedMatches = trimmed.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi);
+    for (const match of fencedMatches) {
+      if (match[1]?.trim()) candidates.push(match[1].trim());
+    }
+
+    const objectStart = trimmed.indexOf('{');
+    const arrayStart = trimmed.indexOf('[');
+    const starts = [objectStart, arrayStart].filter(index => index >= 0);
+    if (starts.length > 0) {
+      const start = Math.min(...starts);
+      const close = trimmed[start] === '[' ? ']' : '}';
+      const end = trimmed.lastIndexOf(close);
+      if (end > start) candidates.push(trimmed.slice(start, end + 1));
+    }
+
+    const uniqueCandidates = [...new Set(candidates)];
+    for (const candidate of uniqueCandidates) {
+      try {
+        return JSON.parse(candidate);
+      } catch {
+        // Try the next likely JSON fragment.
+      }
+    }
+
+    throw new Error('JSONの解析に失敗しました');
+  };
+
+  const reflectImportDraftToForm = (draft: ImportDraft, members: FamilyMember[] = []) => {
+    members.forEach(member => onAddFamilyMember?.(member));
+    setFormData(prev => ({
+      ...prev,
+      ...draft.data,
+      insuredId: draft.insuredId || '',
+      beneficiaryId: draft.beneficiaryId || '',
+    }));
+    setFormImportWarnings(draft.warnings);
+    setImportDrafts([]);
+    setPendingImportMembers([]);
+    setPasteText('');
+    setShowPasteArea(false);
     setFormErrors({});
   };
 
@@ -809,19 +690,14 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     }
 
     if (hasPreviewRefs) {
-      if (createdImportMembers.length > 0) {
-        setPendingImportMembers(prev => {
-          const next = [...prev];
-          for (const member of createdImportMembers) {
-            const index = next.findIndex(existing => existing.id === member.id);
-            if (index >= 0) next[index] = { ...next[index], ...member };
-            else next.push(member);
-          }
-          return next;
-        });
+      const nextImportMembers = [...pendingImportMembers];
+      for (const member of createdImportMembers) {
+        const index = nextImportMembers.findIndex(existing => existing.id === member.id);
+        if (index >= 0) nextImportMembers[index] = { ...nextImportMembers[index], ...member };
+        else nextImportMembers.push(member);
       }
 
-      setImportDrafts(prev => prev.map(draft => {
+      const nextDrafts = importDrafts.map(draft => {
         const resolved = draftResolvedIds[draft.id];
         if (!resolved) return draft;
         const insuredId = resolved.insured || draft.insuredId;
@@ -830,7 +706,14 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
           insuredId,
           beneficiaryId: resolved.beneficiary || (draft.linkBeneficiaryToInsured && resolved.insured ? resolved.insured : draft.beneficiaryId),
         };
-      }));
+      });
+
+      const draft = nextDrafts[0];
+      if (draft) reflectImportDraftToForm(draft, nextImportMembers);
+      else {
+        setPendingImportMembers(nextImportMembers);
+        setImportDrafts(nextDrafts);
+      }
     } else {
       setFormData(prev => ({
         ...prev,
@@ -843,6 +726,10 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
   };
 
   const skipUnresolvedNames = () => {
+    const draft = importDrafts[0];
+    if (draft) {
+      reflectImportDraftToForm(draft, pendingImportMembers);
+    }
     setUnresolvedNames([]);
     setLinkBeneficiaryToInsured(false);
   };
@@ -855,11 +742,12 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     reader.onload = (event) => {
       try {
         const content = event.target?.result as string;
-        prepareJsonImport(JSON.parse(content));
-        e.target.value = '';
+        prepareJsonImport(parseImportJsonText(content));
       } catch (err) {
         console.error('JSON Import Error:', err);
-        alert('JSONの解析に失敗しました。形式を確認してください。');
+        alert(err instanceof Error ? err.message : 'JSONの解析に失敗しました。JSONのみ、または```jsonのコードブロックで出力された内容を指定してください。');
+      } finally {
+        e.target.value = '';
       }
     };
     reader.readAsText(file);
@@ -867,99 +755,55 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
 
   const handlePasteImport = () => {
     try {
-      if (!pasteText.trim()) return;
-      prepareJsonImport(JSON.parse(pasteText));
+      const latestPasteText = pasteTextareaRef.current?.value ?? pasteText;
+      if (!latestPasteText.trim()) return;
+      prepareJsonImport(parseImportJsonText(latestPasteText));
     } catch (err) {
-      alert('JSONの解析に失敗しました。正しいJSON形式で貼り付けてください。');
+      alert(err instanceof Error ? err.message : 'JSONの解析に失敗しました。JSONのみ、または```jsonのコードブロックで貼り付けてください。');
     }
   };
 
   const setField = (field: string, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const setDraftDuplicateAction = (draftId: string, duplicateAction: DuplicateAction) => {
-    setImportDrafts(prev => prev.map(draft => draft.id === draftId ? { ...draft, duplicateAction } : draft));
-  };
-
-  const getDraftBlockingIssues = (draft: ImportDraft): string[] => {
-    const issues: string[] = [];
-    if (!draft.data.companyName) issues.push('保険会社');
-    if (!draft.data.contractDate) issues.push('契約日');
-    if (!draft.insuredId) issues.push('被保険者');
-    if (!draft.data.policyEndAge) issues.push('保険期間');
-    if (!draft.data.paymentEndAge && draft.data.paymentFrequency !== 'single') issues.push('払込終了年齢');
-    return issues;
-  };
-
-  const activeImportDrafts = importDrafts.filter(draft => draft.duplicateAction !== 'skip');
-  const importBlockingDrafts = activeImportDrafts.filter(draft => getDraftBlockingIssues(draft).length > 0);
-  const canImportDrafts = activeImportDrafts.length > 0 && importBlockingDrafts.length === 0;
-
-  const buildPolicyFromDraft = (draft: ImportDraft): Policy => {
-    const paymentFrequency = draft.data.paymentFrequency || 'monthly';
-    const premiumAmount = draft.data.premiumAmount || 0;
-    return {
-      id: draft.duplicateAction === 'overwrite' && draft.duplicatePolicyId ? draft.duplicatePolicyId : uuidv4(),
-      companyName: draft.data.companyName || '',
-      policyType: draft.data.policyType || '終身保険',
-      policyNumber: draft.data.policyNumber || '',
-      contractDate: draft.data.contractDate || '',
-      contractAge: draft.data.contractAge || 0,
-      insuredId: draft.insuredId,
-      beneficiaryId: draft.beneficiaryId || '',
-      deathBenefitDisease: draft.data.deathBenefitDisease || 0,
-      deathBenefitAccident: draft.data.deathBenefitAccident || 0,
-      hospDayDisease: draft.data.hospDayDisease || 0,
-      hospDayAccident: draft.data.hospDayAccident || 0,
-      diagnosisBenefit: draft.data.diagnosisBenefit || 0,
-      policyEndAge: draft.data.policyEndAge || 0,
-      paymentFrequency,
-      premiumAmount,
-      paymentEndAge: draft.data.paymentEndAge || 0,
-      annualPremium: paymentFrequency === 'monthly' ? premiumAmount * 12 : premiumAmount,
-      maturityBenefit: draft.data.maturityBenefit || 0,
-      consultantNote: draft.data.consultantNote,
-    };
-  };
-
-  const clearImportPreview = () => {
-    setImportDrafts([]);
-    setPendingImportMembers([]);
-    setUnresolvedNames([]);
-    setPasteText('');
-  };
-
-  const applyFirstDraftToForm = () => {
-    const draft = importDrafts[0];
-    if (!draft) return;
-    for (const member of pendingImportMembers) {
-      onAddFamilyMember?.(member);
+  const handlePromptEditorToggle = () => {
+    if (showPromptEditor) {
+      setShowPromptEditor(false);
+      return;
     }
-    setFormData(prev => ({
-      ...prev,
-      ...draft.data,
-      insuredId: draft.insuredId || '',
-      beneficiaryId: draft.beneficiaryId || '',
-    }));
-    clearImportPreview();
+    setPromptDraft(policyPrompt);
+    setPromptCopied(false);
+    setPromptSaved(false);
     setShowPasteArea(false);
+    setShowPromptEditor(true);
   };
 
-  const importDraftsToList = () => {
-    if (!canImportDrafts) return;
-    const policiesToImport = activeImportDrafts.map(buildPolicyFromDraft);
-    if (onImportPolicies) {
-      onImportPolicies(policiesToImport, pendingImportMembers, `JSON取込 ${policiesToImport.length}件`);
-    } else {
-      policiesToImport.forEach(policy => onAdd(policy));
-      pendingImportMembers.forEach(member => onAddFamilyMember?.(member));
+  const handleSavePrompt = () => {
+    const nextPrompt = promptDraft.trim();
+    if (!nextPrompt) {
+      alert('プロンプトを入力してください。');
+      return;
     }
-    clearImportPreview();
-    handleClose();
+
+    try {
+      window.localStorage.setItem(PROMPT_STORAGE_KEY, nextPrompt);
+      setPolicyPrompt(nextPrompt);
+      setPromptDraft(nextPrompt);
+      setPromptSaved(true);
+      window.setTimeout(() => setPromptSaved(false), 1800);
+    } catch {
+      alert('プロンプトを保存できませんでした。');
+    }
   };
 
-  const handleCopyPrompt = async () => {
+  const handleResetPromptDraft = () => {
+    setPromptDraft(DEFAULT_POLICY_PROMPT);
+    setPromptCopied(false);
+    setPromptSaved(false);
+  };
+
+  const handleCopyPrompt = async (text = policyPrompt) => {
     try {
-      await navigator.clipboard.writeText(GEMINI_POLICY_PROMPT);
+      await navigator.clipboard.writeText(text);
       setPromptCopied(true);
       window.setTimeout(() => setPromptCopied(false), 1800);
     } catch {
@@ -1021,8 +865,12 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
             <h3>{editingPolicy ? '保険証券の編集' : '保険証券の詳細登録'}</h3>
           </div>
           <div className="header-actions">
-            <button type="button" className="json-import-btn-outline" onClick={handleCopyPrompt}>
-              <Clipboard size={16} /> {promptCopied ? 'コピー済み' : 'Geminiプロンプト'}
+            <button
+              type="button"
+              className={`json-import-btn-outline ${showPromptEditor ? 'is-active' : ''}`}
+              onClick={handlePromptEditorToggle}
+            >
+              <Clipboard size={16} /> プロンプト
             </button>
             <button type="button" className="json-import-btn-outline" onClick={() => setShowPasteArea(!showPasteArea)}>
               <Upload size={16} /> 貼り付け取込
@@ -1040,6 +888,37 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
             <button type="button" className="close-btn" onClick={handleClose}><X size={20} /></button>
           </div>
         </div>
+
+        {showPromptEditor && (
+          <div className="prompt-editor full-width">
+            <div className="prompt-editor-header">
+              <h4>画像認識プロンプト</h4>
+            </div>
+            <textarea
+              value={promptDraft}
+              onChange={(e) => {
+                setPromptDraft(e.target.value);
+                setPromptSaved(false);
+              }}
+              rows={14}
+              className="prompt-editor-textarea"
+            />
+            <div className="prompt-editor-actions">
+              <button type="button" className="json-paste-apply-btn" onClick={handleSavePrompt}>
+                <Save size={16} /> {promptSaved ? '保存済み' : '保存'}
+              </button>
+              <button type="button" className="json-paste-cancel-btn" onClick={() => handleCopyPrompt(promptDraft)}>
+                <Clipboard size={16} /> {promptCopied ? 'コピー済み' : 'コピー'}
+              </button>
+              <button type="button" className="json-paste-cancel-btn" onClick={handleResetPromptDraft}>
+                <RotateCcw size={16} /> 初期値に戻す
+              </button>
+              <button type="button" className="json-paste-cancel-btn" onClick={() => setShowPromptEditor(false)}>
+                閉じる
+              </button>
+            </div>
+          </div>
+        )}
 
         {unresolvedNames.length > 0 && (
           <div className="resolve-wizard full-width">
@@ -1149,103 +1028,10 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
           </div>
         )}
 
-        {importDrafts.length > 0 && (
-          <div className="json-import-preview full-width">
-            <div className="json-import-preview-header">
-              <div>
-                <h4><ListChecks size={18} /> JSON取込プレビュー</h4>
-                <p>{importDrafts.length}件の証券を読み取りました。内容を確認してから反映してください。</p>
-              </div>
-              <button type="button" className="json-paste-cancel-btn" onClick={clearImportPreview}>クリア</button>
-            </div>
-
-            {importBlockingDrafts.length > 0 && (
-              <div className="json-import-alert">
-                <AlertTriangle size={16} />
-                <span>必須項目が不足している証券があります。被保険者の紐付けと項目を確認してください。</span>
-              </div>
-            )}
-
-            <div className="json-import-preview-table-wrap">
-              <table className="json-import-preview-table">
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>保険会社</th>
-                    <th>保険種類</th>
-                    <th>証券番号</th>
-                    <th>被保険者</th>
-                    <th>受取人</th>
-                    <th>保険料</th>
-                    <th>確認</th>
-                    <th>重複時</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {importDrafts.map((draft, index) => {
-                    const insured = allVisibleMembers.find(member => member.id === draft.insuredId);
-                    const beneficiary = allVisibleMembers.find(member => member.id === draft.beneficiaryId);
-                    const blocking = getDraftBlockingIssues(draft);
-                    const warningCount = draft.warnings.length + blocking.length;
-
-                    return (
-                      <tr key={draft.id} className={blocking.length > 0 ? 'json-import-row-blocked' : undefined}>
-                        <td>{index + 1}</td>
-                        <td>{draft.data.companyName || '-'}</td>
-                        <td>{draft.data.policyType || '-'}</td>
-                        <td>{draft.data.policyNumber || '-'}</td>
-                        <td>{insured ? formatFamilyOptionLabel(insured) : (draft.insuredName || '未設定')}</td>
-                        <td>{beneficiary ? formatFamilyOptionLabel(beneficiary) : (draft.beneficiaryName || '指定なし')}</td>
-                        <td>{(draft.data.premiumAmount || 0).toLocaleString()}円</td>
-                        <td>
-                          {warningCount === 0 ? (
-                            <span className="json-import-ok"><CheckCircle size={14} /> OK</span>
-                          ) : (
-                            <div className="json-import-warning-list">
-                              {[...blocking.map(item => `${item}が必要です`), ...draft.warnings].map((warning, warningIndex) => (
-                                <span key={`${draft.id}-warning-${warningIndex}`}>{warning}</span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td>
-                          {draft.duplicatePolicyId ? (
-                            <select
-                              value={draft.duplicateAction}
-                              onChange={e => setDraftDuplicateAction(draft.id, e.target.value as DuplicateAction)}
-                              className="resolve-select"
-                            >
-                              <option value="overwrite">上書き</option>
-                              <option value="new">別証券で追加</option>
-                              <option value="skip">取込しない</option>
-                            </select>
-                          ) : (
-                            <span className="json-import-muted">新規</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="json-import-preview-actions">
-              <button type="button" className="json-paste-apply-btn" onClick={importDraftsToList} disabled={!canImportDrafts}>
-                一覧に取り込む
-              </button>
-              {importDrafts.length === 1 && (
-                <button type="button" className="json-paste-cancel-btn" onClick={applyFirstDraftToForm}>
-                  フォームに反映
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
         {showPasteArea && (
           <div className="json-paste-area full-width">
             <textarea
+              ref={pasteTextareaRef}
               placeholder="GeminiのJSON出力をここに貼り付けてください..."
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
@@ -1255,6 +1041,17 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="json-paste-actions">
               <button type="button" className="json-paste-apply-btn" onClick={handlePasteImport}>適用する</button>
               <button type="button" className="json-paste-cancel-btn" onClick={() => setShowPasteArea(false)}>閉じる</button>
+            </div>
+          </div>
+        )}
+
+        {formImportWarnings.length > 0 && (
+          <div className="json-import-alert full-width">
+            <AlertTriangle size={16} />
+            <div className="json-import-warning-list">
+              {formImportWarnings.map((warning, index) => (
+                <span key={`form-import-warning-${index}`}>{warning}</span>
+              ))}
             </div>
           </div>
         )}

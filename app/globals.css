@@ -1367,6 +1367,78 @@ h1 {
   gap: 2rem;
 }
 
+.agency-master-tools {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: end;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.agency-master-tools .form-group {
+  margin-bottom: 0;
+}
+
+.agency-master-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.agency-master-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  color: #2c5282;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.agency-master-action-btn:hover {
+  background: #ebf8ff;
+  border-color: #3182ce;
+}
+
+.agency-master-action-btn:disabled,
+.agency-master-action-btn:disabled:hover {
+  background: #edf2f7;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: default;
+}
+
+.agency-master-notice {
+  grid-column: 1 / -1;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.agency-master-notice.is-success {
+  background: #f0fff4;
+  color: #276749;
+  border: 1px solid #c6f6d5;
+}
+
+.agency-master-notice.is-error {
+  background: #fff5f5;
+  color: #c53030;
+  border: 1px solid #fed7d7;
+}
+
 .grid-form section {
   display: flex;
   flex-direction: column;
@@ -2607,6 +2679,18 @@ h1 {
 
   .age-analysis-notice button {
     width: 100%;
+  }
+
+  .agency-master-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .agency-master-actions {
+    justify-content: stretch;
+  }
+
+  .agency-master-action-btn {
+    flex: 1;
   }
 
   .pac-body {

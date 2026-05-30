@@ -70,6 +70,17 @@ export function createCase(): CaseSummary {
 
 export function deleteCase(caseId: string): boolean {
   const db = getDb();
-  const result = db.prepare('DELETE FROM cases WHERE id = ?').run(caseId);
-  return result.changes > 0;
+  return db.transaction(() => {
+    const existing = db.prepare('SELECT id FROM cases WHERE id = ?').get(caseId);
+    if (!existing) return false;
+
+    db.prepare('DELETE FROM policies WHERE case_id = ?').run(caseId);
+    db.prepare('DELETE FROM portfolio_insights WHERE case_id = ?').run(caseId);
+    db.prepare('DELETE FROM agencies WHERE case_id = ?').run(caseId);
+    db.prepare('DELETE FROM app_state_meta WHERE case_id = ?').run(caseId);
+    db.prepare('DELETE FROM family_members WHERE case_id = ?').run(caseId);
+    db.prepare('DELETE FROM cases WHERE id = ?').run(caseId);
+
+    return true;
+  })();
 }

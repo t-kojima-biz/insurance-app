@@ -297,10 +297,26 @@ export default function Page() {
     setCsvImportOpen(false);
   };
 
-  const handleSaveModal = (updatedFamily: FamilyMember[], updatedAgency: Agency) => {
-    setFamilyMembers(updatedFamily);
-    setAgency(updatedAgency);
-    setHasUnsavedChanges(true);
+  const handleSaveModal = async (updatedFamily: FamilyMember[], updatedAgency: Agency) => {
+    if (!activeCaseId) return;
+    const validationError = validateBeforeSave(updatedFamily, policies, updatedAgency);
+    if (validationError) {
+      addToast('warning', validationError);
+      throw new Error(validationError);
+    }
+
+    setIsSaving(true);
+    setError(null);
+    try {
+      const state = await apiSave(activeCaseId, { familyMembers: updatedFamily, policies, agency: updatedAgency });
+      applyState(state);
+      addToast('success', '世帯・代理店情報を保存しました');
+    } catch (err) {
+      addToast('error', getErrorMessage(err, '世帯・代理店情報の保存に失敗しました'));
+      throw err;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!activeCaseId) {

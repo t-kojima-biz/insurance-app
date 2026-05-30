@@ -18,8 +18,13 @@ services:
     environment:
       TZ: Asia/Tokyo
       NODE_ENV: production
+    # Windows bind mounts are owned as root inside the container. The production
+    # override keeps only the SQLite data mount, so run this local production
+    # service as root to keep the database writable.
+    user: root
     init: false
-    volumes: []
+    volumes: !override
+      - ./data:/app/data
     healthcheck:
       start_period: 10s
     deploy: *prod-deploy

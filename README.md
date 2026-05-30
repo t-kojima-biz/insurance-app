@@ -5,6 +5,7 @@
 ## 主な機能
 
 - 顧客ケース、家族情報、代理店情報、保険証券の管理
+- 代理店情報のSQLite保存、代理店マスターへの登録・更新・呼び出し
 - 保険証券CSV取込と重複証券番号チェック
 - 保険証券画像OCR向けJSONプロンプトの表示・編集・SQLite保存
 - 現在の月額保険料負担、死亡保障、入院日額のサマリー表示
@@ -73,7 +74,7 @@ docker compose exec -T insurance-app npm run test:sample-reset
 
 開発環境ではSQLiteファイルを `data/insurance.sqlite` に保存します。`docker-compose.yml` では `./data:/app/data` をマウントしているため、コンテナを作り直してもデータは残ります。
 
-本番オーバーライド `docker-compose.prod.yml` はボリュームを持たない構成です。永続化が必要な本番運用では、`/app/data` への永続ボリューム追加を検討してください。
+本番オーバーライド `docker-compose.prod.yml` はビルド済み成果物を使い、SQLite保存先の `./data:/app/data` だけをマウントします。Windowsのbind mount上のSQLiteを書き込めるよう、このローカル本番構成ではサービスを `root` ユーザーで起動します。
 
 ## 関連ドキュメント
 

@@ -23,7 +23,7 @@ import {
 import {
   INSURANCE_TYPE_INFO,
   analyzePortfolio,
-  getMonthlyPremium,
+  getActiveMonthlyPremium,
   getCurrentDeathBenefit,
   type PortfolioInsight,
 } from '@/utils/analysisUtils';
@@ -219,7 +219,7 @@ const InsuranceTypeOverview: React.FC<InsuranceTypeOverviewProps> = ({ caseId, p
         {(Object.entries(grouped) as [PolicyType, Policy[]][]).map(([type, typePolicies]) => {
           const info = INSURANCE_TYPE_INFO[type];
           const Icon = iconMap[info.iconName];
-          const totalMonthly = typePolicies.reduce((sum, p) => sum + getMonthlyPremium(p), 0);
+          const totalMonthly = typePolicies.reduce((sum, p) => sum + getActiveMonthlyPremium(p, currentAge), 0);
           const totalDeathBenefit = typePolicies.reduce((sum, p) => sum + getCurrentDeathBenefit(p, currentAge), 0);
           const totalHosp = typePolicies.reduce((sum, p) => sum + p.hospDayDisease, 0);
           const desc = getDescription(type);

@@ -341,3 +341,9 @@ export function getMonthlyPremium(policy: Policy): number {
   if (policy.paymentFrequency === 'annual') return policy.premiumAmount / 12;
   return 0;
 }
+
+export function getActiveMonthlyPremium(policy: Policy, currentAge: number | null): number {
+  if (policy.paymentFrequency === 'single') return 0;
+  if (currentAge !== null && policy.paymentEndAge !== 999 && currentAge >= policy.paymentEndAge) return 0;
+  return getMonthlyPremium(policy);
+}

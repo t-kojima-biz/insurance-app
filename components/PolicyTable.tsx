@@ -3,19 +3,21 @@
 import React, { useState, useMemo } from 'react';
 import type { Policy, FamilyMember } from '@/types';
 import { Edit2, GripVertical, Trash, Search, X } from 'lucide-react';
+import { getActiveMonthlyPremium, getMonthlyPremium, isExpired, isPaidUp } from '@/utils/analysisUtils';
 
 type DropPosition = 'before' | 'after';
 
 interface PolicyTableProps {
   policies: Policy[];
   familyMembers: FamilyMember[];
+  currentAge: number | null;
   onDelete: (id: string) => void;
   onEdit: (policy: Policy) => void;
   onAddNew: () => void;
   onReorder: (draggedId: string, targetId: string, position: DropPosition) => void;
 }
 
-const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDelete, onEdit, onAddNew, onReorder }) => {
+const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, currentAge, onDelete, onEdit, onAddNew, onReorder }) => {
   const [draggedPolicyId, setDraggedPolicyId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: DropPosition } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,19 +27,38 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
     return member ? `${member.relationship} (${member.name})` : '未設定';
   };
 
-  const getAnnualPremium = (policy: Policy) => {
-    if (policy.paymentFrequency === 'monthly') return policy.premiumAmount * 12;
-    if (policy.paymentFrequency === 'annual') return policy.premiumAmount;
-    return policy.premiumAmount;
-  };
-
-  const totalAnnual = policies.reduce((sum, p) => sum + getAnnualPremium(p), 0);
-  const monthlyTotal = policies.filter(p => p.paymentFrequency === 'monthly').reduce((sum, p) => sum + p.premiumAmount, 0);
-  const annualTotal = policies.filter(p => p.paymentFrequency === 'annual').reduce((sum, p) => sum + p.premiumAmount, 0);
+  const currentMonthlyBurden = policies.reduce((sum, p) => sum + getActiveMonthlyPremium(p, currentAge), 0);
   const totalDeathBenefit = policies.reduce((sum, p) => sum + p.deathBenefitDisease, 0);
   const totalHospDay = policies.reduce((sum, p) => sum + p.hospDayDisease, 0);
+  const monthlyBurdenTotalNote = currentAge === null
+    ? '一時払を除外。払込終了判定には生年月日が必要'
+    : '対象: 月払・年払（払込中）';
 
   const freqLabel = (f: string) => f === 'monthly' ? '月払' : f === 'annual' ? '年払' : '一時払';
+
+  const getPaymentEndLabel = (policy: Policy) =>
+    policy.paymentEndAge === 999 ? '終身払い' : `${policy.paymentEndAge}歳まで`;
+
+  const getPremiumMeta = (policy: Policy) => {
+    if (policy.paymentFrequency === 'single') return '一時払・月額負担対象外';
+    if (policy.paymentFrequency === 'annual') {
+      return `年払・月換算${Math.round(getMonthlyPremium(policy)).toLocaleString()}円`;
+    }
+    return `月払・${getPaymentEndLabel(policy)}`;
+  };
+
+  const getStatusBadges = (policy: Policy) => {
+    const badges: Array<{ label: string; className: string }> = [
+      { label: freqLabel(policy.paymentFrequency), className: `is-${policy.paymentFrequency}` },
+    ];
+    if (currentAge !== null && policy.paymentFrequency !== 'single' && isPaidUp(policy, currentAge)) {
+      badges.push({ label: '払込済', className: 'is-paid-up' });
+    }
+    if (currentAge !== null && isExpired(policy, currentAge)) {
+      badges.push({ label: '保障終了', className: 'is-expired' });
+    }
+    return badges;
+  };
 
   const filteredPolicies = useMemo(() => {
     if (!searchQuery.trim()) return policies;
@@ -168,7 +189,22 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
               <td>{policy.deathBenefitDisease > 0 ? `${(policy.deathBenefitDisease / 10000).toLocaleString()}万円` : '-'}</td>
               <td>{policy.hospDayDisease > 0 ? `${policy.hospDayDisease.toLocaleString()}円` : '-'}</td>
               <td>{getMemberName(policy.beneficiaryId)}</td>
-              <td>{policy.premiumAmount.toLocaleString()}円 ({freqLabel(policy.paymentFrequency)})</td>
+              <td>
+                <div className="premium-cell">
+                  <div className="premium-main">{policy.premiumAmount.toLocaleString()}円</div>
+                  <div className="premium-meta">{getPremiumMeta(policy)}</div>
+                  <div className="policy-status-badges">
+                    {getStatusBadges(policy).map(badge => (
+                      <span
+                        key={`${policy.id}-${badge.className}`}
+                        className={`policy-status-badge ${badge.className}`}
+                      >
+                        {badge.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </td>
               <td className="actions-cell">
                 <button onClick={() => onEdit(policy)} className="edit-icon-btn" title="編集"><Edit2 size={16} /></button>
                 <button onClick={() => onDelete(policy.id)} className="delete-icon-btn" title="削除"><Trash size={16} /></button>
@@ -186,24 +222,15 @@ const PolicyTable: React.FC<PolicyTableProps> = ({ policies, familyMembers, onDe
             <td></td>
             <td style={{ fontWeight: 700 }}>{totalDeathBenefit > 0 ? `${(totalDeathBenefit / 10000).toLocaleString()}万円` : '-'}</td>
             <td style={{ fontWeight: 700 }}>{totalHospDay > 0 ? `${totalHospDay.toLocaleString()}円` : '-'}</td>
-            <td></td>
-            <td style={{ fontWeight: 700 }}>{monthlyTotal > 0 ? `${monthlyTotal.toLocaleString()}円/月` : ''}</td>
+            <td style={{ textAlign: 'right', fontWeight: 700 }}>
+              <div className="total-label">
+                <strong>現在月額負担計</strong>
+                <span>{monthlyBurdenTotalNote}</span>
+              </div>
+            </td>
+            <td style={{ fontWeight: 700 }}>{currentMonthlyBurden > 0 ? `${Math.round(currentMonthlyBurden).toLocaleString()}円/月` : '-'}</td>
             <td className="actions-cell"></td>
           </tr>
-          {annualTotal > 0 && (
-            <tr className="total-row">
-              <td className="order-cell"></td>
-              <td className="drag-cell"></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td style={{ textAlign: 'right', fontWeight: 700 }}>年払計</td>
-              <td style={{ fontWeight: 700 }}>{annualTotal.toLocaleString()}円/年</td>
-              <td className="actions-cell"></td>
-            </tr>
-          )}
         </tfoot>
       </table>
     </div>

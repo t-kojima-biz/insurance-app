@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Policy } from '@/types';
-import { CreditCard, Shield, Activity } from 'lucide-react';
+import { Activity, CreditCard, Info, Shield } from 'lucide-react';
+import { getActiveMonthlyPremium } from '@/utils/analysisUtils';
 
 interface SummaryDashboardProps {
   policies: Policy[];
@@ -9,8 +10,12 @@ interface SummaryDashboardProps {
 
 const SummaryDashboard: React.FC<SummaryDashboardProps> = ({ policies, currentAge }) => {
   const totalMonthlyPremium = policies.reduce((sum, p) => {
-    return sum + (p.paymentFrequency === 'monthly' ? p.premiumAmount : p.premiumAmount / 12);
+    return sum + getActiveMonthlyPremium(p, currentAge);
   }, 0);
+  const activeMonthlyPremiumCount = policies.filter(p => getActiveMonthlyPremium(p, currentAge) > 0).length;
+  const monthlyPremiumNote = currentAge === null
+    ? '一時払を除外。払込終了判定には生年月日が必要'
+    : '一時払・払込終了済みは除外';
 
   const totalDeathBenefit = currentAge === null ? null : policies.reduce((sum, p) => {
     if (currentAge < p.policyEndAge || p.policyEndAge === 999) {
@@ -37,9 +42,13 @@ const SummaryDashboard: React.FC<SummaryDashboardProps> = ({ policies, currentAg
       <div className="summary-card">
         <div className="card-header">
           <CreditCard className="icon" />
-          <span>合計月額保険料</span>
+          <span>現在の月額保険料負担</span>
+          <Info size={14} className="card-info-icon" aria-label={monthlyPremiumNote} />
         </div>
         <div className="card-value">{Math.round(totalMonthlyPremium).toLocaleString()}円</div>
+        <div className="card-subtext">
+          対象{activeMonthlyPremiumCount}件 / {monthlyPremiumNote}
+        </div>
       </div>
 
       <div className="summary-card">

@@ -8,6 +8,7 @@ import PolicyTable from '@/components/PolicyTable';
 import PolicyForm from '@/components/PolicyForm';
 import PolicyAnalysisSection from '@/components/PolicyAnalysisSection';
 import PrintCoverPage from '@/components/PrintCoverPage';
+import PrintPageNumber from '@/components/PrintPageNumber';
 import CustomerModal from '@/components/CustomerModal';
 import CsvImportDialog from '@/components/CsvImportDialog';
 import CaseListPage from '@/components/CaseListPage';
@@ -38,6 +39,17 @@ function validateBeforeSave(familyMembers: FamilyMember[], policies: Policy[], a
     if (!VALID_FREQUENCIES.includes(p.paymentFrequency)) return `払方「${p.paymentFrequency}」が不正です`;
   }
   return null;
+}
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object') {
+    const error = 'error' in err ? (err as { error?: unknown }).error : undefined;
+    if (typeof error === 'string' && error.trim()) return error;
+
+    const message = 'message' in err ? (err as { message?: unknown }).message : undefined;
+    if (typeof message === 'string' && message.trim() && !message.startsWith('API Error:')) return message;
+  }
+  return fallback;
 }
 
 export default function Page() {
@@ -84,8 +96,8 @@ export default function Page() {
     try {
       const state = await fetchAppState(caseId);
       applyState(state);
-    } catch {
-      addToast('error', 'データの読み込みに失敗しました');
+    } catch (err) {
+      addToast('error', getErrorMessage(err, 'データの読み込みに失敗しました'));
     }
     setIsLoading(false);
   }, [applyState]);
@@ -112,8 +124,8 @@ export default function Page() {
     try {
       const state = await resetAppState(activeCaseId);
       applyState(state);
-    } catch {
-      addToast('error', 'サンプル読込に失敗しました');
+    } catch (err) {
+      addToast('error', getErrorMessage(err, 'サンプル読込に失敗しました'));
     }
     setIsLoading(false);
   };
@@ -155,8 +167,8 @@ export default function Page() {
       await restoreBackup(file);
       addToast('success', '復元しました。ページをリロードします...');
       setTimeout(() => window.location.reload(), 1500);
-    } catch {
-      addToast('error', '復元に失敗しました。有効なバックアップファイルか確認してください。');
+    } catch (err) {
+      addToast('error', getErrorMessage(err, '復元に失敗しました。有効なバックアップファイルか確認してください。'));
     }
   };
 
@@ -250,8 +262,8 @@ export default function Page() {
     try {
       const state = await clearAppState(activeCaseId);
       applyState(state);
-    } catch {
-      addToast('error', 'データ消去に失敗しました');
+    } catch (err) {
+      addToast('error', getErrorMessage(err, 'データ消去に失敗しました'));
     }
     setIsLoading(false);
   };
@@ -269,8 +281,8 @@ export default function Page() {
       const state = await apiSave(activeCaseId, { familyMembers, policies, agency });
       applyState(state);
       addToast('success', '保存しました');
-    } catch {
-      addToast('error', '保存に失敗しました');
+    } catch (err) {
+      addToast('error', getErrorMessage(err, '保存に失敗しました'));
     }
     setIsSaving(false);
   };
@@ -299,9 +311,15 @@ export default function Page() {
     return <div className="loading-screen">データを読み込んでいます...</div>;
   }
 
+  const hasPrintableCharts = displayAge !== null;
+  const hasPrintableAnalysis = displayAge !== null && policies.length > 0;
+  const printTotalPages = 2
+    + (hasPrintableCharts ? 1 : 0)
+    + (hasPrintableAnalysis ? 1 + policies.length : 0);
+
   return (
     <div className="App">
-      <PrintCoverPage customerName={self?.name || ""} agency={agency} />
+      <PrintCoverPage customerName={self?.name || ""} agency={agency} totalPages={printTotalPages} />
 
       {isCustomerModalOpen && (
         <CustomerModal
@@ -391,29 +409,34 @@ export default function Page() {
       </header>
 
       <main>
-        {!hasKnownCurrentAge && policies.length > 0 && (
-          <div className="age-analysis-notice no-print">
-            <AlertTriangle size={20} />
-            <div>
-              <strong>年齢を使う集計・グラフ・診断は非表示にしています</strong>
-              <p>本人の生年月日が未入力のため、現在年齢が必要な結果を計算できません。生年月日を入力すると自動で表示されます。</p>
+        <section className="print-summary-page">
+          {!hasKnownCurrentAge && policies.length > 0 && (
+            <div className="age-analysis-notice no-print">
+              <AlertTriangle size={20} />
+              <div>
+                <strong>年齢を使う集計・グラフ・診断は非表示にしています</strong>
+                <p>本人の生年月日が未入力のため、現在年齢が必要な結果を計算できません。生年月日を入力すると自動で表示されます。</p>
+              </div>
+              <button type="button" onClick={() => setIsCustomerModalOpen(true)}>
+                世帯・家族情報を開く
+              </button>
             </div>
-            <button type="button" onClick={() => setIsCustomerModalOpen(true)}>
-              世帯・家族情報を開く
-            </button>
-          </div>
-        )}
+          )}
 
-        <SummaryDashboard policies={policies} currentAge={displayAge} />
+          <SummaryDashboard policies={policies} currentAge={displayAge} />
 
-        <PolicyTable
-          policies={policies}
-          familyMembers={familyMembers}
-          onDelete={handleDeletePolicy}
-          onEdit={handleEditStart}
-          onAddNew={() => setIsPolicyFormOpen(true)}
-          onReorder={handleReorderPolicy}
-        />
+          <PolicyTable
+            policies={policies}
+            familyMembers={familyMembers}
+            currentAge={displayAge}
+            onDelete={handleDeletePolicy}
+            onEdit={handleEditStart}
+            onAddNew={() => setIsPolicyFormOpen(true)}
+            onReorder={handleReorderPolicy}
+          />
+
+          <PrintPageNumber currentPage={2} totalPages={printTotalPages} />
+        </section>
 
         {displayAge !== null && (
           <div className="charts-container">
@@ -423,6 +446,7 @@ export default function Page() {
             <div className="chart-item">
               <CostChart policies={policies} currentAge={displayAge} />
             </div>
+            <PrintPageNumber currentPage={3} totalPages={printTotalPages} />
           </div>
         )}
 
@@ -433,6 +457,9 @@ export default function Page() {
             currentAge={displayAge}
             familyMembers={familyMembers}
             onUpdateNote={handleUpdateNote}
+            printOverviewPage={4}
+            printFirstPolicyPage={5}
+            printTotalPages={printTotalPages}
           />
         )}
 

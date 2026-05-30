@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Policy, PolicyType, FamilyMember } from '@/types';
 import { AlertTriangle, Clipboard, FileUp, RotateCcw, Save, Upload, X } from 'lucide-react';
 import { mergeRelationshipSuggestions } from '@/utils/relationshipOptions';
+import { fetchPolicyPrompt, savePolicyPrompt } from '@/lib/api';
+import { DEFAULT_POLICY_PROMPT, LEGACY_DEFAULT_POLICY_PROMPTS, normalizePromptText } from '@/lib/policyPrompt';
 
 interface PolicyFormProps {
   isOpen: boolean;
@@ -70,34 +72,7 @@ const formatFamilyOptionLabel = (member: FamilyMember) => {
 const getDefaultFamilyMemberId = (members: FamilyMember[]) =>
   members.find(hasSearchableName)?.id || '';
 
-const PROMPT_STORAGE_KEY = 'insurance-policy-import-prompt';
-
-const DEFAULT_POLICY_PROMPT = `保険証券の画像を読み取り、以下のJSON形式だけで出力してください。
-説明文やMarkdownは不要です。読めない項目は "" または 0 にしてください。
-金額は円単位の整数、日付は YYYY-MM-DD 形式にしてください。
-1回の出力は1証券分だけにしてください。複数の証券がある場合は、1証券ずつ分けて出力してください。
-受取人が「被保険者と同じ」「同上」「本人」などの場合は "同上" としてください。
-
-{
-  "保険会社": "",
-  "保険種類": "",
-  "証券番号": "",
-  "契約日": "",
-  "契約年齢": 0,
-  "被保険者": "",
-  "受取人": "",
-  "死亡保障疾病": 0,
-  "死亡保障災害": 0,
-  "入院日額疾病": 0,
-  "入院日額災害": 0,
-  "診断一時金": 0,
-  "保険期間": "",
-  "払方": "",
-  "保険料": 0,
-  "払込終了年齢": 0,
-  "満期保険金": 0,
-  "コンサルタントメモ": ""
-}`;
+const LEGACY_PROMPT_STORAGE_KEY = 'insurance-policy-import-prompt';
 
 const createUnresolvedName = (
   field: UnresolvedName['field'],
@@ -223,6 +198,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
   const [promptDraft, setPromptDraft] = useState(DEFAULT_POLICY_PROMPT);
   const [promptCopied, setPromptCopied] = useState(false);
   const [promptSaved, setPromptSaved] = useState(false);
+  const [promptSaving, setPromptSaving] = useState(false);
   
   // マッチング未解決の名前管理
   const [unresolvedNames, setUnresolvedNames] = useState<UnresolvedName[]>([]);
@@ -246,10 +222,58 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
   const hasUnresolvedNameErrors = unresolvedNameErrors.some(Boolean);
 
   useEffect(() => {
-    const savedPrompt = window.localStorage.getItem(PROMPT_STORAGE_KEY);
-    if (!savedPrompt?.trim()) return;
-    setPolicyPrompt(savedPrompt);
-    setPromptDraft(savedPrompt);
+    let cancelled = false;
+
+    const readLegacyPrompt = () => {
+      try {
+        return window.localStorage.getItem(LEGACY_PROMPT_STORAGE_KEY)?.trim() || '';
+      } catch {
+        return '';
+      }
+    };
+
+    const removeLegacyPrompt = () => {
+      try {
+        window.localStorage.removeItem(LEGACY_PROMPT_STORAGE_KEY);
+      } catch {
+        // ignore unavailable storage
+      }
+    };
+
+    const isDefaultPrompt = (prompt: string) =>
+      normalizePromptText(prompt) === normalizePromptText(DEFAULT_POLICY_PROMPT) ||
+      LEGACY_DEFAULT_POLICY_PROMPTS.some(legacy => normalizePromptText(legacy) === normalizePromptText(prompt));
+
+    const loadPrompt = async () => {
+      const legacyPrompt = readLegacyPrompt();
+      try {
+        const saved = await fetchPolicyPrompt();
+        let nextPrompt = saved.prompt?.trim() || DEFAULT_POLICY_PROMPT;
+        const hasLegacyCustomPrompt = legacyPrompt && !isDefaultPrompt(legacyPrompt);
+        const databasePromptIsDefault = isDefaultPrompt(nextPrompt);
+
+        if (hasLegacyCustomPrompt && (saved.source === 'default' || databasePromptIsDefault)) {
+          nextPrompt = (await savePolicyPrompt(legacyPrompt)).prompt;
+        }
+
+        removeLegacyPrompt();
+        if (!cancelled) {
+          setPolicyPrompt(nextPrompt);
+          setPromptDraft(nextPrompt);
+        }
+      } catch (err) {
+        console.error('Policy prompt load error:', err);
+        if (!cancelled && legacyPrompt && !isDefaultPrompt(legacyPrompt)) {
+          setPolicyPrompt(legacyPrompt);
+          setPromptDraft(legacyPrompt);
+        }
+      }
+    };
+
+    loadPrompt();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const [formData, setFormData] = useState<Partial<Policy>>({
@@ -330,6 +354,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
       '契約年齢': 'contractAge',
       '被保険者': 'insuredName',
       '被保険者名': 'insuredName',
+      '被保険者生年月日': 'insuredBirthDate',
       '保険対象者': 'insuredName',
       '受取人': 'beneficiaryName',
       '受取人名': 'beneficiaryName',
@@ -436,6 +461,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     field: UnresolvedName['field'],
     label: string,
     originalName: unknown,
+    birthDate = '',
   ) => {
     const name = String(originalName || '').trim();
     const key = normalizePersonName(name) || `${field}:${name}`;
@@ -443,6 +469,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     const existing = map.get(key);
     if (existing) {
       existing.refs = [...(existing.refs || []), ref];
+      if (!existing.birthDate && birthDate) existing.birthDate = birthDate;
       if (!existing.label.includes(label)) existing.label = '被保険者/受取人';
       return;
     }
@@ -452,6 +479,7 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
       : familyMembers.find(isEmptyFamilyPlaceholder);
     const item = createUnresolvedName(field, label, name, [ref]);
     if (field === 'insured') item.relationship = initialPlaceholder?.relationship || '本人';
+    if (birthDate) item.birthDate = birthDate;
     map.set(key, item);
   };
 
@@ -482,13 +510,14 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
 
     const existingMemberIds = new Set(familyMembers.map(member => member.id));
     const insuredName = String(json.insuredName || '').trim();
+    const insuredBirthDate = parseImportDate(json.insuredBirthDate);
     const beneficiaryName = String(json.beneficiaryName || '').trim();
     let insuredId = typeof json.insuredId === 'string' && existingMemberIds.has(json.insuredId)
       ? json.insuredId
       : findMemberIdByName(familyMembers, insuredName);
 
     if (!insuredId && insuredName) {
-      addPreviewUnresolved(unresolvedMap, draftId, 'insured', '被保険者', insuredName);
+      addPreviewUnresolved(unresolvedMap, draftId, 'insured', '被保険者', insuredName, insuredBirthDate);
     }
 
     const beneficiaryIsSameAsInsured = Boolean(
@@ -777,21 +806,32 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
     setShowPromptEditor(true);
   };
 
-  const handleSavePrompt = () => {
+  const handlePasteAreaToggle = () => {
+    setShowPromptEditor(false);
+    setShowPasteArea(current => !current);
+  };
+
+  const handleSavePrompt = async () => {
     const nextPrompt = promptDraft.trim();
     if (!nextPrompt) {
       alert('プロンプトを入力してください。');
       return;
     }
 
+    setPromptSaving(true);
     try {
-      window.localStorage.setItem(PROMPT_STORAGE_KEY, nextPrompt);
-      setPolicyPrompt(nextPrompt);
-      setPromptDraft(nextPrompt);
+      const saved = await savePolicyPrompt(nextPrompt);
+      setPolicyPrompt(saved.prompt);
+      setPromptDraft(saved.prompt);
       setPromptSaved(true);
       window.setTimeout(() => setPromptSaved(false), 1800);
-    } catch {
-      alert('プロンプトを保存できませんでした。');
+    } catch (err) {
+      const message = err && typeof err === 'object' && 'error' in err
+        ? String((err as { error?: unknown }).error)
+        : 'プロンプトを保存できませんでした。';
+      alert(message);
+    } finally {
+      setPromptSaving(false);
     }
   };
 
@@ -865,18 +905,18 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
             <h3>{editingPolicy ? '保険証券の編集' : '保険証券の詳細登録'}</h3>
           </div>
           <div className="header-actions">
+            <button type="button" className="json-import-btn-outline" onClick={handlePasteAreaToggle}>
+              <Upload size={16} /> JSON貼り付け
+            </button>
+            <button type="button" className="json-import-btn-outline" onClick={() => fileInputRef.current?.click()}>
+              <FileUp size={16} /> JSONファイル
+            </button>
             <button
               type="button"
               className={`json-import-btn-outline ${showPromptEditor ? 'is-active' : ''}`}
               onClick={handlePromptEditorToggle}
             >
               <Clipboard size={16} /> プロンプト
-            </button>
-            <button type="button" className="json-import-btn-outline" onClick={() => setShowPasteArea(!showPasteArea)}>
-              <Upload size={16} /> 貼り付け取込
-            </button>
-            <button type="button" className="json-import-btn-outline" onClick={() => fileInputRef.current?.click()}>
-              <FileUp size={16} /> JSON取込
             </button>
             <input
               ref={fileInputRef}
@@ -904,8 +944,8 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
               className="prompt-editor-textarea"
             />
             <div className="prompt-editor-actions">
-              <button type="button" className="json-paste-apply-btn" onClick={handleSavePrompt}>
-                <Save size={16} /> {promptSaved ? '保存済み' : '保存'}
+              <button type="button" className="json-paste-apply-btn" onClick={handleSavePrompt} disabled={promptSaving}>
+                <Save size={16} /> {promptSaving ? '保存中' : promptSaved ? '保存済み' : '保存'}
               </button>
               <button type="button" className="json-paste-cancel-btn" onClick={() => handleCopyPrompt(promptDraft)}>
                 <Clipboard size={16} /> {promptCopied ? 'コピー済み' : 'コピー'}
@@ -920,7 +960,9 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
           </div>
         )}
 
-        {unresolvedNames.length > 0 && (
+        {(unresolvedNames.length > 0 || formImportWarnings.length > 0) && (
+          <div className="form-notice-stack full-width">
+            {unresolvedNames.length > 0 && (
           <div className="resolve-wizard full-width">
             <div className="resolve-wizard-header">
               <Upload size={20} className="resolve-icon" />
@@ -1026,6 +1068,19 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
               </button>
             </div>
           </div>
+            )}
+
+            {formImportWarnings.length > 0 && (
+              <div className="json-import-alert full-width">
+                <AlertTriangle size={16} />
+                <div className="json-import-warning-list">
+                  {formImportWarnings.map((warning, index) => (
+                    <span key={`form-import-warning-${index}`}>{warning}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {showPasteArea && (
@@ -1041,17 +1096,6 @@ const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="json-paste-actions">
               <button type="button" className="json-paste-apply-btn" onClick={handlePasteImport}>適用する</button>
               <button type="button" className="json-paste-cancel-btn" onClick={() => setShowPasteArea(false)}>閉じる</button>
-            </div>
-          </div>
-        )}
-
-        {formImportWarnings.length > 0 && (
-          <div className="json-import-alert full-width">
-            <AlertTriangle size={16} />
-            <div className="json-import-warning-list">
-              {formImportWarnings.map((warning, index) => (
-                <span key={`form-import-warning-${index}`}>{warning}</span>
-              ))}
             </div>
           </div>
         )}

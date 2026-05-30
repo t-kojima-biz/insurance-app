@@ -66,6 +66,19 @@ h1 {
   font-size: 1.1rem;
 }
 
+.card-info-icon {
+  margin-left: auto;
+  color: #94a3b8;
+  flex: 0 0 auto;
+}
+
+.card-subtext {
+  margin-top: 0.4rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .charts-container {
   display: flex;
   flex-direction: column;
@@ -210,6 +223,88 @@ h1 {
 
 .policy-table .total-row:hover {
   background: #f8fafc;
+}
+
+.premium-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 8.5rem;
+}
+
+.premium-main {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.premium-meta {
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.policy-status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.policy-status-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 0.1rem 0.42rem;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.policy-status-badge.is-monthly {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.policy-status-badge.is-annual {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.policy-status-badge.is-single {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.policy-status-badge.is-paid-up {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.policy-status-badge.is-expired {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.total-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.total-label span {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .policy-table .grand-total-row {
@@ -748,6 +843,10 @@ h1 {
   display: none;
 }
 
+.print-page-number {
+  display: none;
+}
+
 .pac-print-section-title {
   display: none;
 }
@@ -995,6 +1094,18 @@ h1 {
   flex-direction: column;
   gap: 0.2rem;
   color: #92400e;
+}
+
+.form-notice-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-notice-stack .resolve-wizard,
+.form-notice-stack .json-import-alert {
+  margin: 0;
 }
 
 .json-paste-apply-btn:disabled {
@@ -2625,6 +2736,17 @@ h1 {
     display: block !important;
   }
 
+  .print-page-number {
+    display: block !important;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    color: #64748b;
+    font-size: 8pt;
+    font-weight: 600;
+    line-height: 1;
+  }
+
   .cover-page {
     height: 190mm;
     box-sizing: border-box;
@@ -2787,21 +2909,140 @@ h1 {
     margin-bottom: 1rem !important;
   }
 
+  header {
+    margin-bottom: 5mm !important;
+    padding-bottom: 4mm !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  header p {
+    margin: 0 !important;
+  }
+
   #root {
     max-width: 100% !important;
     padding: 0 !important;
   }
 
+  main {
+    display: block !important;
+  }
+
+  .print-summary-page {
+    position: relative;
+    min-height: 150mm;
+    padding-bottom: 8mm;
+    box-sizing: border-box;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 5mm !important;
+    margin-bottom: 6mm !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
   .summary-card {
     box-shadow: none !important;
     border: 1px solid #ddd !important;
+    border-radius: 2mm !important;
+    padding: 4mm 5mm !important;
+    min-height: 0 !important;
+  }
+
+  .card-header {
+    gap: 2mm !important;
+    margin-bottom: 1.5mm !important;
+    font-size: 0.72rem !important;
+  }
+
+  .icon {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .card-info-icon {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  .card-value {
+    font-size: 1.12rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .card-subtext,
+  .premium-meta,
+  .total-label span {
+    font-size: 0.65rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .premium-cell {
+    gap: 0.15rem !important;
+  }
+
+  .policy-status-badge {
+    font-size: 0.6rem !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .table-container {
     box-shadow: none !important;
     border: none !important;
-    margin-top: 1rem !important;
+    border-radius: 0 !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  .table-header-row {
+    margin-bottom: 2mm !important;
+  }
+
+  .table-header-row h3 {
+    font-size: 0.95rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .policy-table {
+    table-layout: fixed !important;
+    font-size: 0.66rem !important;
+    white-space: normal !important;
+  }
+
+  .policy-table thead {
+    display: table-header-group;
+  }
+
+  .policy-table th,
+  .policy-table td {
+    padding: 1.8mm 2mm !important;
+    line-height: 1.35 !important;
+    vertical-align: middle !important;
+  }
+
+  .policy-table tr {
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .premium-cell {
+    min-width: 0 !important;
+  }
+
+  .policy-status-badges {
+    gap: 1mm !important;
+  }
+
+  .total-label {
+    gap: 0.5mm !important;
   }
 
   body {
@@ -2819,6 +3060,7 @@ h1 {
     padding: 0 !important;
     height: 190mm !important;
     box-sizing: border-box !important;
+    position: relative !important;
   }
 
   .chart-item {
@@ -2896,6 +3138,16 @@ h1 {
 
   .analysis-section {
     page-break-before: always;
+    break-before: page;
+  }
+
+  .type-overview-print-page {
+    min-height: 190mm;
+    position: relative;
+    padding-bottom: 8mm;
+    box-sizing: border-box;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .type-overview-card, .pm-block {
@@ -2920,8 +3172,25 @@ h1 {
     flex-direction: column;
     justify-content: center;
     height: 190mm;
-    page-break-before: always;
+    position: relative;
+    padding-bottom: 8mm;
+    box-sizing: border-box;
+    page-break-before: auto;
+    break-before: auto;
+    page-break-after: auto;
+    break-after: auto;
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .analysis-card-page + .analysis-card-page {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .analysis-card-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .pac-header {
@@ -3039,14 +3308,16 @@ h1 {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  .policy-type-badge, .eval-badge, .insight-item, .toc-count, .expired-badge {
+  .policy-type-badge, .eval-badge, .insight-item, .toc-count, .expired-badge, .policy-status-badge {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
 
   .portfolio-insights {
     page-break-inside: avoid;
-    page-break-after: always;
+    break-inside: avoid;
+    page-break-after: auto;
+    break-after: auto;
   }
 
   .individual-analysis > .analysis-section-title {

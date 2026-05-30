@@ -3,6 +3,7 @@ import type { Policy, FamilyMember } from '@/types';
 import { ClipboardList } from 'lucide-react';
 import InsuranceTypeOverview from '@/components/InsuranceTypeOverview';
 import PolicyAnalysisCard from '@/components/PolicyAnalysisCard';
+import PrintPageNumber from '@/components/PrintPageNumber';
 
 interface PolicyAnalysisSectionProps {
   caseId: string;
@@ -10,14 +11,29 @@ interface PolicyAnalysisSectionProps {
   currentAge: number;
   familyMembers: FamilyMember[];
   onUpdateNote: (policyId: string, note: string) => void;
+  printOverviewPage: number;
+  printFirstPolicyPage: number;
+  printTotalPages: number;
 }
 
-const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ caseId, policies, currentAge, familyMembers, onUpdateNote }) => {
+const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({
+  caseId,
+  policies,
+  currentAge,
+  familyMembers,
+  onUpdateNote,
+  printOverviewPage,
+  printFirstPolicyPage,
+  printTotalPages,
+}) => {
   if (policies.length === 0) return null;
 
   return (
     <div className="analysis-section">
-      <InsuranceTypeOverview caseId={caseId} policies={policies} currentAge={currentAge} />
+      <div className="type-overview-print-page">
+        <InsuranceTypeOverview caseId={caseId} policies={policies} currentAge={currentAge} />
+        <PrintPageNumber currentPage={printOverviewPage} totalPages={printTotalPages} />
+      </div>
 
       <div className="individual-analysis">
         <h3 className="analysis-section-title">
@@ -26,7 +42,7 @@ const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ caseId, p
         </h3>
 
         <div className="analysis-cards-list">
-          {policies.map((policy) => (
+          {policies.map((policy, index) => (
             <div key={policy.id} className="analysis-card-page">
               <PolicyAnalysisCard
                 policy={policy}
@@ -34,6 +50,7 @@ const PolicyAnalysisSection: React.FC<PolicyAnalysisSectionProps> = ({ caseId, p
                 familyMembers={familyMembers}
                 onUpdateNote={onUpdateNote}
               />
+              <PrintPageNumber currentPage={printFirstPolicyPage + index} totalPages={printTotalPages} />
             </div>
           ))}
         </div>

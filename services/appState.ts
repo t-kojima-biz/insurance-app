@@ -108,17 +108,44 @@ function insertSampleData(caseId: string): void {
   db.prepare('INSERT INTO agencies (id, case_id, name, representative, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(agencyId, caseId, agency.name, agency.representative, agency.phone, ts, ts);
 
   const members = getSampleFamilyMembers();
+  const memberIdMap = new Map(members.map(member => [member.id, uuidv4()]));
   const insertMember = db.prepare('INSERT INTO family_members (id, case_id, name, name_kana, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
-    insertMember.run(m.id, caseId, m.name, m.nameKana, m.relationship, m.birthDate, m.gender, i, ts, ts);
+    insertMember.run(memberIdMap.get(m.id), caseId, m.name, m.nameKana, m.relationship, m.birthDate, m.gender, i, ts, ts);
   }
 
   const policies = getSamplePolicies();
   const insertPolicy = db.prepare(`INSERT INTO policies (id, case_id, company_name, policy_type, policy_number, contract_date, contract_age, insured_member_id, beneficiary_member_id, death_benefit_disease, death_benefit_accident, hosp_day_disease, hosp_day_accident, diagnosis_benefit, policy_end_age, payment_frequency, premium_amount, payment_end_date, payment_end_age, annual_premium, maturity_benefit, consultant_note, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   for (let i = 0; i < policies.length; i++) {
     const p = policies[i];
-    insertPolicy.run(p.id, caseId, p.companyName, p.policyType, p.policyNumber || null, p.contractDate, p.contractAge, p.insuredId, p.beneficiaryId || null, p.deathBenefitDisease, p.deathBenefitAccident, p.hospDayDisease, p.hospDayAccident, p.diagnosisBenefit, p.policyEndAge, p.paymentFrequency, p.premiumAmount, null, p.paymentEndAge, p.annualPremium, p.maturityBenefit, p.consultantNote ?? null, i, ts, ts);
+    insertPolicy.run(
+      uuidv4(),
+      caseId,
+      p.companyName,
+      p.policyType,
+      p.policyNumber || null,
+      p.contractDate,
+      p.contractAge,
+      memberIdMap.get(p.insuredId) || p.insuredId,
+      p.beneficiaryId ? memberIdMap.get(p.beneficiaryId) || p.beneficiaryId : null,
+      p.deathBenefitDisease,
+      p.deathBenefitAccident,
+      p.hospDayDisease,
+      p.hospDayAccident,
+      p.diagnosisBenefit,
+      p.policyEndAge,
+      p.paymentFrequency,
+      p.premiumAmount,
+      null,
+      p.paymentEndAge,
+      p.annualPremium,
+      p.maturityBenefit,
+      p.consultantNote ?? null,
+      i,
+      ts,
+      ts,
+    );
   }
 
   db.prepare('INSERT OR REPLACE INTO app_state_meta (case_id, schema_version, updated_at) VALUES (?, 1, ?)').run(caseId, ts);
@@ -208,7 +235,7 @@ export function clearData(caseId: string): AppState {
     db.prepare('DELETE FROM policies WHERE case_id = ?').run(caseId);
     db.prepare('DELETE FROM family_members WHERE case_id = ?').run(caseId);
 
-    const defaultMemberId = 'm1';
+    const defaultMemberId = uuidv4();
     db.prepare('INSERT INTO family_members (id, case_id, name, name_kana, relationship, birth_date, gender, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(defaultMemberId, caseId, '', '', '本人', new Date().toISOString().split('T')[0], 'male', 0, ts, ts);
 
     const existingAgency = db.prepare('SELECT id FROM agencies WHERE case_id = ?').get(caseId) as { id: string } | undefined;

@@ -6,7 +6,8 @@
     "dev": "next dev --port 3020",
     "build": "next build",
     "start": "next start --port 3020",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:sample-reset": "node scripts/test-sample-reset.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1",

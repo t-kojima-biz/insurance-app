@@ -164,6 +164,24 @@ export function resetPortfolioInsights(caseId: string): Promise<{ ok: boolean }>
   return request(`/api/portfolio-insights${qs(caseId)}`, { method: 'DELETE' });
 }
 
+export interface PolicyPromptResponse {
+  prompt: string;
+  source: 'saved' | 'default';
+  updatedAt: string | null;
+}
+
+export function fetchPolicyPrompt(): Promise<PolicyPromptResponse> {
+  return request<PolicyPromptResponse>('/api/settings/policy-prompt');
+}
+
+export function savePolicyPrompt(prompt: string): Promise<PolicyPromptResponse> {
+  return request<PolicyPromptResponse>('/api/settings/policy-prompt', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+}
+
 export function getBackupUrl(): string {
   return '/api/backup';
 }

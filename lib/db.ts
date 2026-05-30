@@ -146,6 +146,12 @@ function runMigrations(db: Database.Database): void {
       FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS app_settings (
+      setting_key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_portfolio_insights_case_id
       ON portfolio_insights(case_id, sort_order);
 

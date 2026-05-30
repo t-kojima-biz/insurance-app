@@ -1,73 +1,81 @@
-# React + TypeScript + Vite
+# 保険証券分析・診断ダッシュボード
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+保険コンサルタント向けに、顧客ごとの保険証券を管理し、保障内容・保険料負担・証券別分析を可視化するNext.jsアプリです。証券情報はSQLiteに保存し、CSV取込、JSON貼り付け、印刷用レポート出力に対応しています。
 
-Currently, two official plugins are available:
+## 主な機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 顧客ケース、家族情報、代理店情報、保険証券の管理
+- 保険証券CSV取込と重複証券番号チェック
+- 保険証券画像OCR向けJSONプロンプトの表示・編集・SQLite保存
+- 現在の月額保険料負担、死亡保障、入院日額のサマリー表示
+- 保険料推移、保障推移、種類別概要、個別証券分析
+- A4横向きの印刷レポート、表紙、ページ番号、証券別改ページ
+- SQLiteデータベースのバックアップ・復元
 
-## React Compiler
+## 技術スタック
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| 分類 | 技術 |
+|---|---|
+| フレームワーク | Next.js 16 App Router |
+| UI | React 19, TypeScript 6, lucide-react |
+| グラフ | Recharts |
+| データベース | SQLite, better-sqlite3 |
+| 実行環境 | Docker, node:22-alpine |
 
-## Expanding the ESLint configuration
+## Dockerで開発する
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+このリポジトリの開発はDocker前提です。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+docker compose up -d --build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+起動後、ブラウザで `http://localhost:3020` を開きます。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+よく使う操作:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+docker compose logs -f insurance-app
+docker compose down
+docker compose restart insurance-app
 ```
+
+## 本番ビルド確認
+
+本番用のstandaloneビルドは以下で確認します。
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache insurance-app
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+ヘルスチェック:
+
+```powershell
+curl http://localhost:3020/api/health
+```
+
+## 検証コマンド
+
+TypeScriptチェック:
+
+```powershell
+docker compose exec -T insurance-app ./node_modules/.bin/tsc --noEmit --pretty false
+```
+
+サンプルリセットAPIの確認:
+
+```powershell
+docker compose exec -T insurance-app npm run test:sample-reset
+```
+
+## データ保存
+
+開発環境ではSQLiteファイルを `data/insurance.sqlite` に保存します。`docker-compose.yml` では `./data:/app/data` をマウントしているため、コンテナを作り直してもデータは残ります。
+
+本番オーバーライド `docker-compose.prod.yml` はボリュームを持たない構成です。永続化が必要な本番運用では、`/app/data` への永続ボリューム追加を検討してください。
+
+## 関連ドキュメント
+
+- [技術仕様書](docs/specification.md)
+- [ER図](docs/er-diagram.md)

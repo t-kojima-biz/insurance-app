@@ -339,7 +339,12 @@ MainDashboard
 - 集計行は死亡保障合計、入院日額合計、現在月額負担計を表示
 - 現在月額負担計は一時払と払込終了済みを除外する
 
-### 7.4 PolicyForm
+### 7.4 CoverageChart / CostChart
+
+- CoverageChartは死亡保障がある証券だけを対象にし、証券一覧の並び順で凡例・色・積み上げ系列を表示する。並び順変更時はチャートを再生成してRechartsの内部スタック順も更新し、一覧の上から順番がグラフの上から順番に見えるように積み上げ描画は逆順で登録する
+- CostChartは現在年齢から将来の月額保険料負担推移を表示する
+
+### 7.5 PolicyForm
 
 - 証券の追加・編集モーダル
 - 金額入力はカンマ区切り表示
@@ -348,7 +353,7 @@ MainDashboard
 - 受取人が「同上」「本人」「被保険者と同じ」の場合は被保険者と同一人物として扱う
 - プロンプトはSQLiteの `app_settings` に保存する
 
-### 7.5 CustomerModal
+### 7.6 CustomerModal
 
 - 世帯・家族情報とケース別代理店情報を編集する
 - 「設定を保存」で `PUT /api/app-state` を実行し、SQLiteへ即時保存する
@@ -356,14 +361,14 @@ MainDashboard
 - 入力中の代理店情報を代理店マスターへ新規保存できる
 - 選択中の代理店マスターを現在の入力内容で更新できる
 
-### 7.6 InsuranceTypeOverview
+### 7.7 InsuranceTypeOverview
 
 - 証券を保険種類ごとにグループ化
 - 保険種類別の説明文、目的、件数、保障・保険料集計を表示
 - 説明文と目的は `insurance_type_descriptions` で上書き可能
 - ポートフォリオ分析コメントは追加・編集・削除・リセット可能
 
-### 7.7 PolicyAnalysisCard
+### 7.8 PolicyAnalysisCard
 
 - 個別証券の保障内容、費用分析、評価バッジ、メモを表示
 - 個人年金保険は受取開始年齢、受取期間、年間受取額、返戻率を表示
@@ -414,7 +419,7 @@ docker compose up -d --build
 
 | 項目 | 値 |
 |---|---|
-| ポート | `3020:3020` |
+| ポート | `3030:3030` |
 | DB | `/app/data/insurance.sqlite` |
 | ボリューム | ソース主要ディレクトリは読み取り専用、`data` は書き込み可 |
 | メモリ制限 | 512MB |
@@ -426,7 +431,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-本番オーバーライドは `runner` ターゲットを使い、開発用のソースコードマウントを外して `./data:/app/data` のみをマウントする。Windowsのbind mount上のSQLiteを書き込めるよう、このローカル本番構成ではサービスを `root` ユーザーで起動する。
+本番オーバーライドは `runner` ターゲットを使い、開発用のソースコードマウントを外して `./data:/app/data` のみをマウントする。Windowsのbind mount上のSQLiteを書き込めるよう、このローカル本番構成ではサービスを `root` ユーザーで起動する。実行時メモリは `mem_limit: 192m`、Node.jsヒープは `NODE_OPTIONS=--max-old-space-size=128` で抑制する。
 
 ---
 
@@ -437,7 +442,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 | TypeScriptチェック | `docker compose exec -T insurance-app ./node_modules/.bin/tsc --noEmit --pretty false` |
 | サンプルリセットAPI確認 | `docker compose exec -T insurance-app npm run test:sample-reset` |
 | 本番Dockerビルド | `docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache insurance-app` |
-| ヘルスチェック | `curl http://localhost:3020/api/health` |
+| ヘルスチェック | `curl http://localhost:3030/api/health` |
 
 ---
 

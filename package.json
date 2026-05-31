@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "next dev --port 3020",
+    "dev": "next dev --port 3030",
     "build": "next build",
-    "start": "next start --port 3020",
+    "start": "next start --port 3030",
     "lint": "next lint",
     "test:sample-reset": "node scripts/test-sample-reset.mjs"
   },

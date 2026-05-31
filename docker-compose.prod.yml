@@ -7,7 +7,7 @@
 x-prod-deploy: &prod-deploy
   resources:
     limits:
-      memory: 256M
+      memory: 192M
     reservations:
       memory: 64M
 
@@ -18,11 +18,14 @@ services:
     environment:
       TZ: Asia/Tokyo
       NODE_ENV: production
+      NODE_OPTIONS: "--max-old-space-size=128"
+      NEXT_TELEMETRY_DISABLED: "1"
     # Windows bind mounts are owned as root inside the container. The production
     # override keeps only the SQLite data mount, so run this local production
     # service as root to keep the database writable.
     user: root
     init: false
+    mem_limit: 192m
     volumes: !override
       - ./data:/app/data
     healthcheck:

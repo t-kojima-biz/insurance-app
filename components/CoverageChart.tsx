@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -21,29 +21,58 @@ interface CoverageChartProps {
 const formatAxisTick = (value: number | string) =>
   Number(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
 
+const COLORS = ['#a5b4fc', '#86efac', '#fde68a', '#fdba74'];
+
 const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) => {
-  const data: Record<string, number>[] = [];
-  for (let age = currentAge; age <= 90; age++) {
-    const dataPoint: any = { age };
-    policies.forEach((policy) => {
-      if (age < policy.policyEndAge || policy.policyEndAge === 999) {
-        let amount = policy.deathBenefitDisease;
+  const chartPolicies = useMemo(
+    () => policies.filter(policy => policy.deathBenefitDisease > 0),
+    [policies],
+  );
 
-        if (policy.policyType === '収入保障保険') {
-          const totalYears = policy.policyEndAge - policy.contractAge;
-          const remainingYears = policy.policyEndAge - age;
-          amount = (policy.deathBenefitDisease * remainingYears) / totalYears;
+  const chartOrderKey = useMemo(
+    () => chartPolicies.map(policy => policy.id).join('|'),
+    [chartPolicies],
+  );
+
+  const stackPolicies = useMemo(
+    () => [...chartPolicies].reverse(),
+    [chartPolicies],
+  );
+
+  const policyColors = useMemo(
+    () => new Map(chartPolicies.map((policy, index) => [policy.id, COLORS[index % COLORS.length]])),
+    [chartPolicies],
+  );
+
+  const data = useMemo(() => {
+    const rows: Record<string, number>[] = [];
+    for (let age = currentAge; age <= 90; age++) {
+      const dataPoint: Record<string, number> = { age };
+      chartPolicies.forEach((policy) => {
+        if (age < policy.policyEndAge || policy.policyEndAge === 999) {
+          let amount = policy.deathBenefitDisease;
+
+          if (policy.policyType === '収入保障保険') {
+            const totalYears = policy.policyEndAge - policy.contractAge;
+            const remainingYears = policy.policyEndAge - age;
+            amount = totalYears > 0 ? (policy.deathBenefitDisease * remainingYears) / totalYears : 0;
+          }
+
+          dataPoint[policy.id] = amount / 10000;
+        } else {
+          dataPoint[policy.id] = 0;
         }
+      });
+      rows.push(dataPoint);
+    }
+    return rows;
+  }, [chartPolicies, currentAge]);
 
-        dataPoint[policy.id] = amount / 10000;
-      } else {
-        dataPoint[policy.id] = 0;
-      }
-    });
-    data.push(dataPoint);
-  }
-
-  const colors = ['#a5b4fc', '#86efac', '#fde68a', '#fdba74'];
+  const legendItems = chartPolicies.map((policy, index) => ({
+    id: policy.id,
+    color: policyColors.get(policy.id) ?? COLORS[index % COLORS.length],
+    label: `${policy.companyName} / ${policy.policyType}`,
+  }));
 
   return (
     <div style={{ width: '100%', marginTop: '20px' }}>
@@ -51,6 +80,8 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
       <ChartContainer height={300}>
         {(width, height) => (
           <AreaChart
+            // Recharts keeps stacked series order internally, so remount when policy order changes.
+            key={chartOrderKey}
             width={width}
             height={height}
             data={data}
@@ -69,20 +100,33 @@ const CoverageChart: React.FC<CoverageChartProps> = ({ policies, currentAge }) =
             <Legend
               verticalAlign="top"
               wrapperStyle={{ paddingBottom: '5px', fontWeight: 'bold', fontSize: '12px' }}
+              content={() => (
+                <ul className="coverage-chart-legend">
+                  {legendItems.map(item => (
+                    <li key={item.id}>
+                      <span style={{ backgroundColor: item.color }} />
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
+              )}
             />
-            {policies.map((policy, index) => (
-              policy.deathBenefitDisease > 0 && (
+            {/* Render in reverse because Recharts stacks the first series at the bottom. */}
+            {stackPolicies.map((policy) => {
+              const color = policyColors.get(policy.id) ?? COLORS[0];
+              return (
                 <Area
                   key={policy.id}
                   type="monotone"
                   dataKey={policy.id}
                   name={`${policy.companyName} / ${policy.policyType}`}
                   stackId="1"
-                  stroke={colors[index % colors.length]}
-                  fill={colors[index % colors.length]}
+                  stroke={color}
+                  fill={color}
+                  isAnimationActive={false}
                 />
-              )
-            ))}
+              );
+            })}
           </AreaChart>
         )}
       </ChartContainer>

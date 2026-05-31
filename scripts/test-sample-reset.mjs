@@ -1,4 +1,4 @@
-const baseUrl = process.env.APP_BASE_URL || 'http://127.0.0.1:3020';
+const baseUrl = process.env.APP_BASE_URL || 'http://127.0.0.1:3030';
 
 async function request(path, options) {
   const response = await fetch(`${baseUrl}${path}`, options);

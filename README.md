@@ -31,7 +31,7 @@
 docker compose up -d --build
 ```
 
-起動後、ブラウザで `http://localhost:3020` を開きます。
+起動後、ブラウザで `http://localhost:3030` を開きます。
 
 よく使う操作:
 
@@ -53,7 +53,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ヘルスチェック:
 
 ```powershell
-curl http://localhost:3020/api/health
+curl http://localhost:3030/api/health
 ```
 
 ## 検証コマンド
@@ -74,7 +74,7 @@ docker compose exec -T insurance-app npm run test:sample-reset
 
 開発環境ではSQLiteファイルを `data/insurance.sqlite` に保存します。`docker-compose.yml` では `./data:/app/data` をマウントしているため、コンテナを作り直してもデータは残ります。
 
-本番オーバーライド `docker-compose.prod.yml` はビルド済み成果物を使い、SQLite保存先の `./data:/app/data` だけをマウントします。Windowsのbind mount上のSQLiteを書き込めるよう、このローカル本番構成ではサービスを `root` ユーザーで起動します。
+本番オーバーライド `docker-compose.prod.yml` はビルド済み成果物を使い、SQLite保存先の `./data:/app/data` だけをマウントします。Windowsのbind mount上のSQLiteを書き込めるよう、このローカル本番構成ではサービスを `root` ユーザーで起動します。メモリ上限は `192m`、Node.jsヒープ上限は `128MB` に抑えています。
 
 ## 関連ドキュメント
 

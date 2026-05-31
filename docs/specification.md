@@ -422,7 +422,7 @@ docker compose up -d --build
 | ポート | `3030:3030` |
 | DB | `/app/data/insurance.sqlite` |
 | ボリューム | ソース主要ディレクトリは読み取り専用、`data` は書き込み可 |
-| メモリ制限 | 512MB |
+| メモリ制限 | 開発 512MB / 本番 192m |
 
 ### 本番ビルド確認
 
@@ -431,7 +431,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-本番オーバーライドは `runner` ターゲットを使い、開発用のソースコードマウントを外して `./data:/app/data` のみをマウントする。Windowsのbind mount上のSQLiteを書き込めるよう、このローカル本番構成ではサービスを `root` ユーザーで起動する。実行時メモリは `mem_limit: 192m`、Node.jsヒープは `NODE_OPTIONS=--max-old-space-size=128` で抑制する。
+本番オーバーライドは `runner` ターゲットを使い、開発用のソースコードマウントを外して `./data:/app/data` のみをマウントする。Windowsのbind mount上のSQLiteを書き込めるよう、このローカル本番構成ではサービスを `root` ユーザーで起動する。実行時メモリは `mem_limit: 192m`、Node.jsヒープは `NODE_OPTIONS=--max-old-space-size=128` で抑制する。標準ポートは `3030` とし、`3020` は他用途との競合を避けるため使わない。
 
 ---
 
